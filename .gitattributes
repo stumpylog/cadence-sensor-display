@@ -1,0 +1,8 @@
+# Set LF ending only
+* text eol=lf
+# Set some basic types as text for sure
+*.c text
+*.txt text
+*.py text
+# Pictures are binary
+*.png binary
