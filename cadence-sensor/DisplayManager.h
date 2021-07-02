@@ -3,14 +3,9 @@
 #define DISPLAY_MANAGER
 
 // Standard Libraries
-#include <stdint.h>
-
-// Arduino Libraries
-#include <Wire.h>
-#include <Stream.h>
+#include <cstdint>
 
 // Display Libraries
-#include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 
 class DisplayManager : public Adafruit_SH1107 {
@@ -25,8 +20,9 @@ class DisplayManager : public Adafruit_SH1107 {
 
     void position(int16_t const, int16_t const);
 
-    void print(const char[]);
-    void println(const char[]);
+    void clear_lines(void);
+    void insert_line(char const[]);
+    void println_lines(void);
 
   private:
     // Display - I2C address
@@ -34,6 +30,11 @@ class DisplayManager : public Adafruit_SH1107 {
     // Display - maximum lines at font size 1
     // TODO - determine actual number
     static constexpr uint8_t DISPLAY_MAX_LINES{6};
+    static constexpr uint8_t DISPLAY_MAX_CHARS_PER_LINE{255};
+    int8_t head_idx;
+    int8_t tail_idx;
+    char lines[DISPLAY_MAX_LINES][DISPLAY_MAX_CHARS_PER_LINE] = {{0}};
+
 };
 
 #endif

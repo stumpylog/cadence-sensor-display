@@ -22,8 +22,10 @@ static DisplayManager display = DisplayManager();
 void setup() {
   display.splash();
   display.clear();
-  display.println("Starting cadence-sensor version " VERSION " ...");
-  delay(2);
+  display.insert_line("Starting cadence-sensor version " VERSION " ...");
+  display.println_lines();
+  display.display();
+  delay(1000);
 
   // Enable BLE
   // Scan for cadence sensor
