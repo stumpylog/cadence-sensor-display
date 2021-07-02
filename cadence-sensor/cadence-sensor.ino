@@ -4,18 +4,25 @@
 // Arduino Libraries
 #include <Wire.h>
 
-// Display Librarues
+// Display Libraries
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 
+// Bluetooth Libraries
+#include <BLEDevice.h>
+
 // Constants
+// Display - Buttons
 static constexpr uint8_t BUTTON_A{15};
 static constexpr uint8_t BUTTON_B{32};
 static constexpr uint8_t BUTTON_C{14};
+// Display - I2C address
 static constexpr uint8_t DISPLAY_ADDR{0x3C};
+// Program version
 #define VERSION "0.0.1"
 
-Adafruit_SH1107 display = Adafruit_SH1107(64, 128, &Wire);
+// Globals
+static Adafruit_SH1107 display = Adafruit_SH1107(64, 128, &Wire);
 
 void setup() {
   display.begin(DISPLAY_ADDR, true);
