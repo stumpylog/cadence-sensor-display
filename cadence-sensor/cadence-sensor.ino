@@ -6,6 +6,7 @@
 
 // Local
 #include "DisplayManager.h"
+#include "DebugSerial.h"
 
 // Constants
 // Display - Buttons
@@ -20,6 +21,9 @@ static constexpr uint8_t BUTTON_C{14};
 static DisplayManager display = DisplayManager();
 
 void setup() {
+  DebugSerialStart(115200);
+  DebugSerialReady();
+  DebugSerialInfo("Starting cadence-sensor version " VERSION " ...");
   display.splash();
   display.clear();
   display.insert_line("Starting cadence-sensor version " VERSION " ...");
