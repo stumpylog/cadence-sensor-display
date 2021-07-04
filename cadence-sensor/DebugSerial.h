@@ -1,6 +1,7 @@
 #ifndef DEBUG_SERIAL
 #define DEBUG_SERIAL
 
+#define DEBUG_LVL_NONE    0ul
 #define DEBUG_LVL_ERR     1ul
 #define DEBUG_LVL_WARN    2ul
 #define DEBUG_LVL_INFO    3ul
@@ -8,7 +9,7 @@
 
 #define DEBUG_LVL DEBUG_LVL_INFO
 
-#ifdef DEBUG_LVL
+#if defined(DEBUG_LVL) && (DEBUG_LVL > DEBUG_LVL_NONE)
 
   #define DebugSerialStart(x)      Serial.begin(x)
   #define DebugSerialReady()       while (!Serial) {}
@@ -16,20 +17,20 @@
   #define DebugSerialPrintLn(x)    Serial.println(x)
   #define DebugSerialFlush()       Serial.flush()
 
-#if DEBUG_LVL >= DEBUG_LVL_VERBOSE
-  #define DebugSerialVerbose(x)    DebugSerialPrintLn(x)
+#if (DEBUG_LVL >= DEBUG_LVL_VERBOSE)
+  #define DebugSerialVerbose(x)    DebugSerialPrintLn("DEBUG: " x)
 #endif
 
-#if DEBUG_LVL >= DEBUG_LVL_INFO
-  #define DebugSerialInfo(x)    DebugSerialPrintLn(x)
+#if (DEBUG_LVL >= DEBUG_LVL_INFO)
+  #define DebugSerialInfo(x)    DebugSerialPrintLn("INFO: " x)
 #endif
 
-#if DEBUG_LVL >= DEBUG_LVL_WARN
-  #define DebugSerialWarn(x)    DebugSerialPrintLn(x)
+#if (DEBUG_LVL >= DEBUG_LVL_WARN)
+  #define DebugSerialWarn(x)    DebugSerialPrintLn("WARN: " x)
 #endif
 
-#if DEBUG_LVL >= DEBUG_LVL_ERR
-  #define DebugSerialErr(x)    DebugSerialPrintLn(x)
+#if (DEBUG_LVL >= DEBUG_LVL_ERR)
+  #define DebugSerialErr(x)    DebugSerialPrintLn("ERR: " x)
 #endif
 
 #else

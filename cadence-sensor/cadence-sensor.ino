@@ -24,6 +24,7 @@ void setup() {
   DebugSerialStart(115200);
   DebugSerialReady();
   DebugSerialInfo("Starting cadence-sensor version " VERSION " ...");
+
   display.splash();
   display.clear();
   display.insert_line("Starting cadence-sensor version " VERSION " ...");
