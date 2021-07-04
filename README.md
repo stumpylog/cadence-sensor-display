@@ -6,7 +6,6 @@
   - [Software](#software)
     - [Display Driver](#display-driver)
     - [Board](#board)
-    - [Sensor](#sensor)
     - [Other](#other)
   - [Other Reading](#other-reading)
 
@@ -32,10 +31,6 @@
 
 * https://github.com/espressif/arduino-esp32/blob/master/docs/arduino-ide/boards_manager.md
 
-### Sensor
-
-* https://www.arduino.cc/reference/en/libraries/esp32-ble-arduino/
-
 ### Other
 
 * https://circuitpython.org/
@@ -45,3 +40,4 @@
 
 * https://jmparound.blogspot.com/2021/02/building-cadence-display-for-ble.html
 * https://github.com/jamesmontemagno/mycadence-arduino
+* https://stackoverflow.com/questions/64624472/ble-cycling-speed-and-cadence-service-crank-timing-data
