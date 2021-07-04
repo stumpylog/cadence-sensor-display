@@ -8,6 +8,7 @@
     - [Board](#board)
     - [Other](#other)
   - [Other Reading](#other-reading)
+    - [Bluetooth Standards](#bluetooth-standards)
 
 ## Introduction
 
@@ -41,3 +42,8 @@
 * https://jmparound.blogspot.com/2021/02/building-cadence-display-for-ble.html
 * https://github.com/jamesmontemagno/mycadence-arduino
 * https://stackoverflow.com/questions/64624472/ble-cycling-speed-and-cadence-service-crank-timing-data
+
+### Bluetooth Standards
+
+* [CSC Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.cycling_speed_and_cadence.xml)
+* [CSC Measurement Characteristic](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.csc_measurement.xml)
