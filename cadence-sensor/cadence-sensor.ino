@@ -9,28 +9,37 @@
 #include "DisplayManager.h"
 #include "DebugSerial.h"
 
+typedef struct {
+  uint32_t prevCumlativeCranks;
+  uint16_t prevLastWheelEventTime;
+  uint8_t calculatedCadence;
+  uint8_t staleness;
+} CadenceData;
+
 // Constants
 // Display - Buttons
 static constexpr uint8_t BUTTON_A{ 15 };
 static constexpr uint8_t BUTTON_B{ 32 };
 static constexpr uint8_t BUTTON_C{ 14 };
-//Bluetooth - speed & cadence UUID
+// Bluetooth - speed & cadence UUID
 static BLEUUID const CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816));
 // Bluetooth - notify UUID
 static BLEUUID const NotifyCharacteristicUUID(static_cast<uint16_t>(0x2a5b));
-
-// Program version
-#define VERSION "0.0.1"
+// Sensor - staleness cycles
+static constexpr uint8_t SENSOR_STALENESS_LIMIT{4};
+static constexpr float_t SENSOR_TIME_RESOLUTION_SCALE{1024.0f};
+static constexpr float_t SENSOR_TIME_TO_MIN_SCALE{SENSOR_TIME_RESOLUTION_SCALE / 60.0f};
 
 // Globals
-
 static boolean doConnect = false;
 static boolean connected = false;
-
+// Program version
+#define VERSION "0.0.1"
 static DisplayManager display;
 static BLERemoteCharacteristic* pRemoteCharacteristic{ nullptr };
 static BLEAdvertisedDevice* myDevice{ nullptr };
 static BLEScan* scanner{ nullptr };
+static CadenceData cadenceData{0};
 
 // Called on connect or disconnect
 class ClientCallback : public BLEClientCallbacks {
@@ -42,10 +51,11 @@ class ClientCallback : public BLEClientCallbacks {
   }
 };
 
+// Called on advertised server found
 class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
   void onResult(BLEAdvertisedDevice advertisedDevice) {
     DebugSerialInfo("BLE Advertised Device found: ");
-    DebugSerialInfo(advertisedDevice.toString().c_str());
+    DebugSerialPrintLn(advertisedDevice.toString().c_str());
 
     // We have found a device, let us now see if it contains the service we are looking for.
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(CycleSpeedAndCadenceServiceUUID)) {
@@ -60,12 +70,52 @@ static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic,
                            uint8_t* pData,
                            size_t length,
                            bool isNotify) {
-  DebugSerialPrint("Notify callback for characteristic ");
-  DebugSerialPrint(pBLERemoteCharacteristic->getUUID().toString().c_str());
-  DebugSerialPrint(" of data length ");
-  DebugSerialPrintLn(length);
-  DebugSerialPrint("data: ");
-  DebugSerialPrintLn((char*)pData);
+  bool const hasWheel = bitRead(pData[0], 0) == 1;
+
+  int crankRevIndex = 1;
+  int crankTimeIndex = 3;
+  if(true == hasWheel)
+  {
+    crankRevIndex = 7;
+    crankTimeIndex = 9;
+  }
+
+  int const cumulativeCrankRev = static_cast<int>((pData[crankRevIndex + 1] << 8) + pData[crankRevIndex]);
+  int const lastCrankTime = static_cast<int>((pData[crankTimeIndex + 1] << 8) + pData[crankTimeIndex]);
+
+  int deltaRotations = cumulativeCrankRev - cadenceData.prevCumlativeCranks;
+  if (deltaRotations < 0)
+  {
+    deltaRotations += 65535;
+  }
+
+  int timeDelta = lastCrankTime - cadenceData.prevLastWheelEventTime;
+  if (timeDelta < 0)
+  {
+    timeDelta += 65535;
+  }
+
+  // In Case Cad Drops, we use PrevRPM
+  // to substitute (up to 4 seconds before reporting 0)
+  if (timeDelta != 0)
+  {
+      cadenceData.staleness = 0;
+      float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_TO_MIN_SCALE;
+      cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
+  }
+
+  else if ((timeDelta == 0) && (cadenceData.staleness < SENSOR_STALENESS_LIMIT))
+  {
+      cadenceData.staleness += 1;
+  }
+  else if (cadenceData.staleness >= SENSOR_STALENESS_LIMIT)
+  {
+      cadenceData.calculatedCadence = 255;
+  }
+
+  cadenceData.prevCumlativeCranks = cumulativeCrankRev;
+  cadenceData.prevLastWheelEventTime = lastCrankTime;
+
 }
 
 bool connectToServer() {
@@ -123,6 +173,11 @@ void setup() {
   display.display();
   delay(1000);
 
+  cadenceData.prevCumlativeCranks = 0;
+  cadenceData.prevLastWheelEventTime = 0;
+  cadenceData.calculatedCadence = 0;
+  cadenceData.staleness = 0;
+
   // Enable BLE
   BLEDevice::init("");
   // Scan for cadence sensor
@@ -137,13 +192,15 @@ void loop() {
   // If the flag "doConnect" is true then we have scanned for and found the desired
   // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
   // connected we set the connected flag to be true.
-  if ((true == doConnect) && (true == connectToServer()) {
+  if ((true == doConnect) && (true == connectToServer())) {
     doConnect = false;
   }
 
   // If we are connected to a peer BLE Server, update the characteristic each time we are reached
   // with the current time since boot.
   if (true == connected) {
+    // Change display to cadence mode
+    // Set displayed cadence
     // Display calculated cadence
   }
   delay(500);
