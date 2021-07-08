@@ -26,9 +26,9 @@ static BLEUUID const CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x181
 // Bluetooth - notify UUID
 static BLEUUID const NotifyCharacteristicUUID(static_cast<uint16_t>(0x2a5b));
 // Sensor - staleness cycles
-static constexpr uint8_t SENSOR_STALENESS_LIMIT{4};
-static constexpr float_t SENSOR_TIME_RESOLUTION_SCALE{1024.0f};
-static constexpr float_t SENSOR_TIME_TO_MIN_SCALE{SENSOR_TIME_RESOLUTION_SCALE / 60.0f};
+static constexpr uint8_t SENSOR_STALENESS_LIMIT{ 4 };
+static constexpr float_t SENSOR_TIME_RESOLUTION_SCALE{ 1024.0f };
+static constexpr float_t SENSOR_TIME_TO_MIN_SCALE{ SENSOR_TIME_RESOLUTION_SCALE / 60.0f };
 
 // Globals
 static boolean doConnect = false;
@@ -37,31 +37,36 @@ static boolean connected = false;
 #define VERSION "0.0.1"
 static DisplayManager display;
 static BLERemoteCharacteristic* pRemoteCharacteristic{ nullptr };
-static BLEAdvertisedDevice* myDevice{ nullptr };
-static BLEScan* scanner{ nullptr };
-static CadenceData cadenceData{0};
+static BLEAdvertisedDevice* cadenceSensor{ nullptr };
+static CadenceData cadenceData{ 0 };
 
 // Called on connect or disconnect
 class ClientCallback : public BLEClientCallbacks {
   void onConnect(BLEClient* pclient) {
+    DebugSerialVerbose("onConnect");
   }
   void onDisconnect(BLEClient* pclient) {
     connected = false;
-    DebugSerialInfo("onDisconnect");
+    DebugSerialVerbose("onDisconnect");
   }
 };
 
 // Called on advertised server found
 class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
   void onResult(BLEAdvertisedDevice advertisedDevice) {
-    DebugSerialInfo("BLE Advertised Device found: ");
-    DebugSerialPrintLn(advertisedDevice.toString().c_str());
+    DebugSerialVerbose("DebugSerialVerbose");
+    DebugSerialInfo("BLE Advertised Device found");
 
     // We have found a device, let us now see if it contains the service we are looking for.
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(CycleSpeedAndCadenceServiceUUID)) {
+      DebugSerialInfo("BLE Device with CSC service found");
       BLEDevice::getScan()->stop();
-      myDevice = new BLEAdvertisedDevice(advertisedDevice);
+      BLEDevice::getScan()->clearResults();
+      cadenceSensor = new BLEAdvertisedDevice(advertisedDevice);
       doConnect = true;
+    }
+    else {
+      DebugSerialInfo("Not advertising CSC service");
     }
   }  // onResult
 };
@@ -74,8 +79,7 @@ static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic,
 
   int crankRevIndex = 1;
   int crankTimeIndex = 3;
-  if(true == hasWheel)
-  {
+  if (true == hasWheel) {
     crankRevIndex = 7;
     crankTimeIndex = 9;
   }
@@ -84,80 +88,78 @@ static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic,
   int const lastCrankTime = static_cast<int>((pData[crankTimeIndex + 1] << 8) + pData[crankTimeIndex]);
 
   int deltaRotations = cumulativeCrankRev - cadenceData.prevCumlativeCranks;
-  if (deltaRotations < 0)
-  {
+  if (deltaRotations < 0) {
     deltaRotations += 65535;
   }
 
   int timeDelta = lastCrankTime - cadenceData.prevLastWheelEventTime;
-  if (timeDelta < 0)
-  {
+  if (timeDelta < 0) {
     timeDelta += 65535;
   }
 
-  // In Case Cad Drops, we use PrevRPM
-  // to substitute (up to 4 seconds before reporting 0)
-  if (timeDelta != 0)
-  {
-      cadenceData.staleness = 0;
-      float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_TO_MIN_SCALE;
-      cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
+  // In Case Cad Drops, we use previous
+  // to substitute
+  if (timeDelta != 0) {
+    cadenceData.staleness = 0;
+    float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_TO_MIN_SCALE;
+    cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / static_cast<float>(timeMins));
   }
 
-  else if ((timeDelta == 0) && (cadenceData.staleness < SENSOR_STALENESS_LIMIT))
-  {
-      cadenceData.staleness += 1;
-  }
-  else if (cadenceData.staleness >= SENSOR_STALENESS_LIMIT)
-  {
-      cadenceData.calculatedCadence = 255;
+  else if ((timeDelta == 0) && (cadenceData.staleness < SENSOR_STALENESS_LIMIT)) {
+    cadenceData.staleness += 1;
+  } else if (cadenceData.staleness >= SENSOR_STALENESS_LIMIT) {
+    cadenceData.calculatedCadence = 255;
   }
 
   cadenceData.prevCumlativeCranks = cumulativeCrankRev;
   cadenceData.prevLastWheelEventTime = lastCrankTime;
-
 }
 
 bool connectToServer() {
-  DebugSerialPrint("Forming a connection to ");
-  DebugSerialPrintLn(myDevice->getAddress().toString().c_str());
+  DebugSerialInfo("Forming a connection to ");
+  DebugSerialPrintLn(cadenceSensor->getAddress().toString().c_str());
 
   BLEClient* pClient = BLEDevice::createClient();
-  DebugSerialPrintLn(" - Created client");
+  DebugSerialInfo(" - Created client");
 
   pClient->setClientCallbacks(new ClientCallback());
 
   // Connect to the remove BLE Server.
-  pClient->connect(myDevice);  // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
-  DebugSerialPrintLn(" - Connected to server");
+  pClient->connect(cadenceSensor);
+  DebugSerialInfo(" - Connected to server");
 
   // Obtain a reference to the service we are after in the remote BLE server.
   BLERemoteService* pRemoteService = pClient->getService(CycleSpeedAndCadenceServiceUUID);
   if (pRemoteService == nullptr) {
-    DebugSerialPrint("Failed to find our service UUID: ");
+    DebugSerialErr("Failed to find our service UUID");
     pClient->disconnect();
+    delete pClient;
+    pClient = nullptr;
     return false;
   }
   DebugSerialPrintLn(" - Found our service");
 
-
   // Obtain a reference to the characteristic in the service of the remote BLE server.
   pRemoteCharacteristic = pRemoteService->getCharacteristic(NotifyCharacteristicUUID);
   if (pRemoteCharacteristic == nullptr) {
-    DebugSerialPrint("Failed to find our characteristic UUID: ");
+    DebugSerialErr("Failed to find our characteristic UUID");
     pClient->disconnect();
+    delete pClient;
+    pClient = nullptr;
     return false;
   }
-  DebugSerialPrintLn(" - Found our characteristic");
+  DebugSerialInfo(" - Found our characteristic");
 
   if (pRemoteCharacteristic->canNotify()) {
     pRemoteCharacteristic->registerForNotify(notifyCallback);
   } else {
+    DebugSerialErr("Failed to find our notify UUID");
     pClient->disconnect();
+    delete pClient;
+    pClient = nullptr;
     return false;
   }
 
-  connected = true;
   return true;
 }
 
@@ -179,21 +181,34 @@ void setup() {
   cadenceData.staleness = 0;
 
   // Enable BLE
+  DebugSerialInfo("Starting BLE scanning");
   BLEDevice::init("");
   // Scan for cadence sensor
-  scanner = BLEDevice::getScan();
-  scanner->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());
-  scanner->setInterval(1349);
-  scanner->setWindow(449);
-  scanner->setActiveScan(true);
+  BLEDevice::getScan()->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());
+  BLEDevice::getScan()->setInterval(1349);
+  BLEDevice::getScan()->setWindow(449);
+  BLEDevice::getScan()->setActiveScan(true);
+  BLEDevice::getScan()->start(11, false);
+
+  DebugSerialInfo("Setup completed");
 }
 
 void loop() {
+  if (false == connected) {
+    DebugSerialInfo("Not connected, rescanning");
+    BLEDevice::getScan()->stop();
+    BLEDevice::getScan()->clearResults();
+    BLEDevice::getScan()->start(5, false);
+  }
   // If the flag "doConnect" is true then we have scanned for and found the desired
   // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
   // connected we set the connected flag to be true.
-  if ((true == doConnect) && (true == connectToServer())) {
-    doConnect = false;
+  if (true == doConnect) {
+    connected = connectToServer();
+    if (true == connected) {
+      DebugSerialInfo("Connected to sensor");
+      doConnect = false;
+    }
   }
 
   // If we are connected to a peer BLE Server, update the characteristic each time we are reached
@@ -201,7 +216,8 @@ void loop() {
   if (true == connected) {
     // Change display to cadence mode
     // Set displayed cadence
+    DebugSerialPrintLn(cadenceData.calculatedCadence);
     // Display calculated cadence
   }
-  delay(500);
+  delay(1000);
 }
