@@ -1,5 +1,5 @@
-#ifndef DEBUG_SERIAL
-#define DEBUG_SERIAL
+#ifndef DEBUG_SERIAL_H
+#define DEBUG_SERIAL_H
 
 #define DEBUG_LVL_NONE    0ul
 #define DEBUG_LVL_ERR     1ul
@@ -19,18 +19,26 @@
 
 #if (DEBUG_LVL >= DEBUG_LVL_VERBOSE)
   #define DebugSerialVerbose(x)    DebugSerialPrintLn("DEBUG: " x)
+#else
+  #define DebugSerialVerbose(x)
 #endif
 
 #if (DEBUG_LVL >= DEBUG_LVL_INFO)
   #define DebugSerialInfo(x)    DebugSerialPrintLn("INFO: " x)
+#else
+  #define DebugSerialInfo(x)
 #endif
 
 #if (DEBUG_LVL >= DEBUG_LVL_WARN)
   #define DebugSerialWarn(x)    DebugSerialPrintLn("WARN: " x)
+#else
+  #define DebugSerialWarn(x)
 #endif
 
 #if (DEBUG_LVL >= DEBUG_LVL_ERR)
   #define DebugSerialErr(x)    DebugSerialPrintLn("ERR: " x)
+#else
+  #define DebugSerialErr(x)
 #endif
 
 #else
@@ -44,6 +52,7 @@
   #define DebugSerialVerbose(x)
   #define DebugSerialInfo(x)
   #define DebugSerialWarn(x)
+  #define DebugSerialErr(x)
 
 #endif
 

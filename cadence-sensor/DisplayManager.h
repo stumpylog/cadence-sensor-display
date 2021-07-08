@@ -1,6 +1,6 @@
 
-#ifndef DISPLAY_MANAGER
-#define DISPLAY_MANAGER
+#ifndef DISPLAY_MANAGER_H
+#define DISPLAY_MANAGER_H
 
 // Standard Libraries
 #include <cstdint>
