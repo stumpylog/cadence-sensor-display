@@ -42,6 +42,7 @@ static BLEAdvertisedDevice* cadenceSensor{ nullptr };
 static CadenceData cadenceData{ 0 };
 
 void scanCompleteCallback(BLEScanResults scanResults) {
+  // Pass results to app
 }
 
 static CadenceSensorApp app(scanCompleteCallback);

@@ -19,6 +19,7 @@ class CadenceSensorApp : public IApplication{
     bool initialize(void);
     void step(void);
 
+    // Parse results to find CSC and notify
     void notifyScanCompleted();
 
   private:
