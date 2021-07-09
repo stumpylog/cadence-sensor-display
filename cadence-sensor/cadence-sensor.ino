@@ -41,7 +41,10 @@ static BLERemoteCharacteristic* pRemoteCharacteristic{ nullptr };
 static BLEAdvertisedDevice* cadenceSensor{ nullptr };
 static CadenceData cadenceData{ 0 };
 
-static CadenceSensorApp app;
+void scanCompleteCallback(BLEScanResults scanResults) {
+}
+
+static CadenceSensorApp app(scanCompleteCallback);
 
 // Called on connect or disconnect
 class ClientCallback : public BLEClientCallbacks {
@@ -173,6 +176,7 @@ void setup() {
 
   if (false == app.initialize())
   {
+    // TODO
     while(1){};
   }
 
