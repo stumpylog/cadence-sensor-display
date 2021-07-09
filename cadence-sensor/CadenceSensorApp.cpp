@@ -89,6 +89,8 @@ void CadenceSensorApp::step(void) {
       break;
     case AppState_t::DISPLAY_CADENCE:
       // TODO - output
+      DebugSerialPrint("Cadence: ");
+      DebugSerialPrintLn(cadenceData.calculatedCadence);
       break;
     case AppState_t::SENSOR_DISCONNECT:
       DebugSerialErr("BLE sensor disconnected, retrying connection");
@@ -178,47 +180,53 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
   DebugSerialPrintLn(length);
   DebugSerialPrint("Data: ");
   DebugSerialPrintFmt(pData[0], HEX);
+  DebugSerialPrint(",");
   DebugSerialPrintFmt(pData[1], HEX);
+  DebugSerialPrint(",");
   DebugSerialPrintFmt(pData[2], HEX);
+  DebugSerialPrint(",");
   DebugSerialPrintFmt(pData[3], HEX);
-  DebugSerialPrintLnFmt(pData[4], HEX);
+  DebugSerialPrint(",");
+  DebugSerialPrintFmt(pData[4], HEX);
+  DebugSerialPrintLn("");
 
-  /*bool const hasWheel = static_cast<bool>(pData[0] & 0x1);
+  uint8_t const flags = pData[0];
 
-  int crankRevIndex = 1;
-  int crankTimeIndex = 3;
-  if (true == hasWheel) {
-    crankRevIndex = 7;
-    crankTimeIndex = 9;
-  }
+  bool const hasWheel = static_cast<bool>(flags & 0x1);
+  bool const hasCrank = static_cast<bool>(flags & 0x2);
 
-  int const cumulativeCrankRev = static_cast<int>((pData[crankRevIndex + 1] << 8) + pData[crankRevIndex]);
-  int const lastCrankTime = static_cast<int>((pData[crankTimeIndex + 1] << 8) + pData[crankTimeIndex]);
+  if (true == hasCrank) {
 
-  int deltaRotations = cumulativeCrankRev - cadenceData.prevCumlativeCranks;
-  if (deltaRotations < 0) {
-    deltaRotations += 65535;
-  }
+    int crankRevIndex = 1;
+    int crankTimeIndex = 3;
+    if (true == hasWheel) {
+      crankRevIndex = 7;
+      crankTimeIndex = 9;
+    }
 
-  int timeDelta = lastCrankTime - cadenceData.prevLastWheelEventTime;
-  if (timeDelta < 0) {
-    timeDelta += 65535;
-  }
+    uint16_t cumulativeCrankRev{ 0 };
+    uint16_t lastCrankTime{ 0 };
 
-  // In Case Cad Drops, we use previous
-  // to substitute
-  if (timeDelta != 0) {
-    cadenceData.staleness = 0;
+    memcpy(&cumulativeCrankRev, &pData[crankRevIndex], sizeof(uint16_t));
+    memcpy(&lastCrankTime, &pData[crankTimeIndex], sizeof(uint16_t));
+
+    if (cumulativeCrankRev < cadenceData.prevCumlativeCranks) {
+      // Roll over
+    }
+
+    if (lastCrankTime < cadenceData.prevLastWheelEventTime) {
+      // Roll over
+    }
+
+    int const deltaRotations = cumulativeCrankRev - cadenceData.prevCumlativeCranks;
+    int const timeDelta = lastCrankTime - cadenceData.prevLastWheelEventTime;
     float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_TO_MIN_SCALE;
-    cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / static_cast<float>(timeMins));
-  }
 
-  else if ((timeDelta == 0) && (cadenceData.staleness < SENSOR_STALENESS_LIMIT)) {
-    cadenceData.staleness += 1;
-  } else if (cadenceData.staleness >= SENSOR_STALENESS_LIMIT) {
-    cadenceData.calculatedCadence = 255;
-  }
+    cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
 
-  cadenceData.prevCumlativeCranks = cumulativeCrankRev;
-  cadenceData.prevLastWheelEventTime = lastCrankTime;*/
+    cadenceData.prevCumlativeCranks = cumulativeCrankRev;
+    cadenceData.prevLastWheelEventTime = lastCrankTime;
+  } else {
+    DebugSerialErr("No crank data");
+  }
 }
