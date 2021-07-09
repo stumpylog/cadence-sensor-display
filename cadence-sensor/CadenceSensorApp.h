@@ -3,24 +3,28 @@
 
 // Standard Libraries
 #include <cstdint>
+#include <cmath>
 
 // Arduino Libraries
 #include <BLEDevice.h>
 #include <BLEUUID.h>
 
+// Local
 #include "IApplication.h"
+#include "DisplayManager.h"
 
 typedef void (BLEScanCompleteCB_t)(BLEScanResults);
 
-class CadenceSensorApp : public IApplication{
+class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallbacks, public BLEClientCallbacks {
   public:
-    CadenceSensorApp(BLEScanCompleteCB_t);
+    CadenceSensorApp();
     ~CadenceSensorApp(void);
     bool initialize(void);
     void step(void);
 
-    // Parse results to find CSC and notify
-    void notifyScanCompleted();
+    void onConnect(BLEClient* pclient);
+    void onDisconnect(BLEClient* pclient);
+    void onResult(BLEAdvertisedDevice advertisedDevice);
 
   private:
     enum class AppState_t : uint8_t {
@@ -28,16 +32,18 @@ class CadenceSensorApp : public IApplication{
       SCAN_DEVICES,
       SCAN_RUNNING,
       CONNECT_TO_SENSOR,
+      SENSOR_CONNECTED,
       DISPLAY_CADENCE,
+      SENSOR_DISCONNECT,
       DISPLAY_BATTERY,
-      LOST_CONNECTION,
     };
     AppState_t state;
 
     BLEScan* pBLEScan;
-    BLEScanCompleteCB_t* pScanCompletedCB;
+    BLEAdvertisedDevice* cadenceSensor;
+    DisplayManager display;
 
-    void connect(void);
+    bool connect(void);
 };
 
 #endif

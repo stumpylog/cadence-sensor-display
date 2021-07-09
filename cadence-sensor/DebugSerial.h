@@ -11,48 +11,52 @@
 
 #if defined(DEBUG_LVL) && (DEBUG_LVL > DEBUG_LVL_NONE)
 
-  #define DebugSerialStart(x)      Serial.begin(x)
-  #define DebugSerialReady()       while (!Serial) {}
-  #define DebugSerialPrint(x)      Serial.print(x)
-  #define DebugSerialPrintLn(x)    Serial.println(x)
-  #define DebugSerialFlush()       Serial.flush()
+  #include <HardwareSerial.h>
+
+  #define DebugSerialStart(val)           Serial.begin(val)
+  #define DebugSerialReady()              while (!Serial) {}
+  #define DebugSerialPrint(val)           Serial.print(val)
+  #define DebugSerialPrintFmt(val, fmt)   Serial.print(val, fmt)
+  #define DebugSerialPrintLn(val)         Serial.println(val)
+  #define DebugSerialPrintLnFmt(val, fmt) Serial.println(val, fmt)
+  #define DebugSerialFlush()              Serial.flush()
 
 #if (DEBUG_LVL >= DEBUG_LVL_VERBOSE)
-  #define DebugSerialVerbose(x)    DebugSerialPrintLn("DEBUG: " x)
+  #define DebugSerialVerbose(val)    DebugSerialPrintLn("DEBUG: " val)
 #else
-  #define DebugSerialVerbose(x)
+  #define DebugSerialVerbose(val)
 #endif
 
 #if (DEBUG_LVL >= DEBUG_LVL_INFO)
-  #define DebugSerialInfo(x)    DebugSerialPrintLn("INFO: " x)
+  #define DebugSerialInfo(val)    DebugSerialPrintLn("INFO: " val)
 #else
-  #define DebugSerialInfo(x)
+  #define DebugSerialInfo(val)
 #endif
 
 #if (DEBUG_LVL >= DEBUG_LVL_WARN)
-  #define DebugSerialWarn(x)    DebugSerialPrintLn("WARN: " x)
+  #define DebugSerialWarn(val)    DebugSerialPrintLn("WARN: " val)
 #else
-  #define DebugSerialWarn(x)
+  #define DebugSerialWarn(val)
 #endif
 
 #if (DEBUG_LVL >= DEBUG_LVL_ERR)
-  #define DebugSerialErr(x)    DebugSerialPrintLn("ERR: " x)
+  #define DebugSerialErr(val)    DebugSerialPrintLn("ERR: " val)
 #else
-  #define DebugSerialErr(x)
+  #define DebugSerialErr(val)
 #endif
 
 #else
 
-  #define DebugSerialStart(x)
+  #define DebugSerialStart(val)
   #define DebugSerialReady()
-  #define DebugSerialPrint(x)
-  #define DebugSerialPrintLn(x)
+  #define DebugSerialPrint(val)
+  #define DebugSerialPrintLn(val)
   #define DebugSerialFlush()
 
-  #define DebugSerialVerbose(x)
-  #define DebugSerialInfo(x)
-  #define DebugSerialWarn(x)
-  #define DebugSerialErr(x)
+  #define DebugSerialVerbose(val)
+  #define DebugSerialInfo(val)
+  #define DebugSerialWarn(val)
+  #define DebugSerialErr(val)
 
 #endif
 
