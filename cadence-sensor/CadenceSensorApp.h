@@ -34,7 +34,6 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
       SCAN_DEVICES = 0,
       SCAN_RUNNING,
       CONNECT_TO_SENSOR,
-      SENSOR_CONNECTED,
       DISPLAY_CADENCE,
       SENSOR_DISCONNECT,
       DISPLAY_BATTERY,

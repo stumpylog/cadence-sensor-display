@@ -94,10 +94,9 @@ void CadenceSensorApp::step(void) {
         DebugSerialErr("Connecting to BLE sensor, retrying scan");
         nextState = AppState_t::SCAN_DEVICES;
       }
-      break;
-    case AppState_t::SENSOR_CONNECTED:
-      DebugSerialInfo("BLE sensor reported connected");
-      nextState = AppState_t::DISPLAY_CADENCE;
+      else {
+        nextState = AppState_t::DISPLAY_CADENCE;
+      }
       break;
     case AppState_t::DISPLAY_CADENCE:
       // TODO - output
@@ -162,11 +161,11 @@ bool CadenceSensorApp::connect(void) {
   DebugSerialInfo("Successful connection to sensor");
   display.insert_line("connected to sensor");
   display.println_lines();
+
   return true;
 }
 
 void CadenceSensorApp::onConnect(BLEClient* pclient) {
-  state = AppState_t::SENSOR_CONNECTED;
 }
 
 void CadenceSensorApp::onDisconnect(BLEClient* pclient) {
@@ -228,6 +227,11 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     memcpy(&cumulativeCrankRev, &pData[crankRevIndex], sizeof(uint16_t));
     memcpy(&lastCrankTime, &pData[crankTimeIndex], sizeof(uint16_t));
 
+    DebugSerialPrint("Cranks: ");
+    DebugSerialPrintLn(cumulativeCrankRev);
+    DebugSerialPrint("Time: ");
+    DebugSerialPrintLn(lastCrankTime);
+
     uint32_t rotationsRollover{ 0 };
 
     if (cumulativeCrankRev < cadenceData.prevCumlativeCranks) {
@@ -245,6 +249,13 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     uint32_t const deltaRotations = (rotationsRollover + cumulativeCrankRev) - cadenceData.prevCumlativeCranks;
     uint32_t const timeDelta = (timeRollover + lastCrankTime) - cadenceData.prevLastWheelEventTime;
     float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_TO_MIN_SCALE;
+
+    DebugSerialPrint("D-Cranks: ");
+    DebugSerialPrintLn(deltaRotations);
+    DebugSerialPrint("D-Time: ");
+    DebugSerialPrintLn(timeDelta);
+    DebugSerialPrint("Time mins: ");
+    DebugSerialPrintLn(timeMins);
 
     // Calculate RPM
     cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
