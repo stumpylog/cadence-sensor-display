@@ -205,6 +205,11 @@ void CadenceSensorApp::onResult(BLEAdvertisedDevice advertisedDevice) {
     state = AppState_t::CONNECT_TO_SENSOR;
   } else {
     // Not advertising CSC service, ensure we scan again if this is the last device
+    DebugSerialInfo("Rejected device");
+    if (advertisedDevice.haveName()) {
+      DebugSerialPrint("Name: ");
+      DebugSerialPrintLn(advertisedDevice.getName().c_str());
+    }
     state = AppState_t::SCAN_DEVICES;
   }
 }
