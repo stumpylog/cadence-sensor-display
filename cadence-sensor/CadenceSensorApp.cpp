@@ -31,8 +31,7 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     pScanCompletedCB{ pScanCompleteCallBack },
     pNotifyCompletedCB{ pNotifyCallBack },
     display(),
-    scanCount{ 0 },
-    aborted{ false } {}
+    scanCount{ 0 } {}
 
 CadenceSensorApp::~CadenceSensorApp(void) {
   if (nullptr != cadenceSensor) {
@@ -56,7 +55,7 @@ void CadenceSensorApp::step(void) {
 
   DebugSerialVerbose("Starting")
 
-  AppState_t nextState{ AppState_t::NO_STATE };
+  AppState_t nextState{ state };
   switch (state) {
     case AppState_t::SCAN_DEVICES:
       if (scanCount > 10) {
@@ -79,7 +78,7 @@ void CadenceSensorApp::step(void) {
     case AppState_t::CONNECT_TO_SENSOR:
       DebugSerialPrintLn("");
       if (false == connect()) {
-        // TODO - handle error
+        // Handle error
         DebugSerialErr("Connecting to BLE sensor, retrying scan");
         nextState = AppState_t::SCAN_DEVICES;
       }
@@ -97,19 +96,17 @@ void CadenceSensorApp::step(void) {
       DebugSerialErr("BLE sensor disconnected, retrying connection");
       nextState = AppState_t::CONNECT_TO_SENSOR;
       break;
+    case AppState_t::ABORT_NOTIFY:
+      DebugSerialErr("Unable to locate sensor in 10 scans, aborting");
+      nextState = AppState_t::ABORT;
+      break;
     case AppState_t::ABORT:
-      if (false == aborted) {
-        DebugSerialErr("Unable to locate sensor in 10 scans");
-      }
-      aborted = true;
       break;
     default:
       break;
   }
 
-  if (nextState != AppState_t::NO_STATE) {
-    state = nextState;
-  }
+  state = nextState;
 }
 
 bool CadenceSensorApp::connect(void) {
@@ -214,20 +211,28 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     memcpy(&cumulativeCrankRev, &pData[crankRevIndex], sizeof(uint16_t));
     memcpy(&lastCrankTime, &pData[crankTimeIndex], sizeof(uint16_t));
 
+    uint32_t rotationsRollover{ 0 };
+
     if (cumulativeCrankRev < cadenceData.prevCumlativeCranks) {
       // Roll over
+      rotationsRollover = 0xFFFF;
     }
+
+    uint32_t timeRollover{ 0 };
 
     if (lastCrankTime < cadenceData.prevLastWheelEventTime) {
       // Roll over
+      timeRollover = 0xFFFF;
     }
 
-    int const deltaRotations = cumulativeCrankRev - cadenceData.prevCumlativeCranks;
-    int const timeDelta = lastCrankTime - cadenceData.prevLastWheelEventTime;
+    uint32_t const deltaRotations = (rotationsRollover + cumulativeCrankRev) - cadenceData.prevCumlativeCranks;
+    uint32_t const timeDelta = (timeRollover + lastCrankTime) - cadenceData.prevLastWheelEventTime;
     float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_TO_MIN_SCALE;
 
+    // Calculate RPM
     cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
 
+    // Save current data as last
     cadenceData.prevCumlativeCranks = cumulativeCrankRev;
     cadenceData.prevLastWheelEventTime = lastCrankTime;
   } else {

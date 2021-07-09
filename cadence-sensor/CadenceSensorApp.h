@@ -31,14 +31,14 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
 
   private:
     enum class AppState_t : uint8_t {
-      NO_STATE = 0,
-      SCAN_DEVICES,
+      SCAN_DEVICES = 0,
       SCAN_RUNNING,
       CONNECT_TO_SENSOR,
       SENSOR_CONNECTED,
       DISPLAY_CADENCE,
       SENSOR_DISCONNECT,
       DISPLAY_BATTERY,
+      ABORT_NOTIFY,
       ABORT,
     };
     AppState_t state;
@@ -53,7 +53,6 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     bool connect(void);
 
     uint8_t scanCount;
-    bool aborted;
 };
 
 #endif
