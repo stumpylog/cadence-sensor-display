@@ -176,6 +176,12 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
   DebugSerialPrintLn("Notify Callback");
   DebugSerialPrint("Length: ");
   DebugSerialPrintLn(length);
+  DebugSerialPrint("Data: ");
+  DebugSerialPrintFmt(pData[0], HEX);
+  DebugSerialPrintFmt(pData[1], HEX);
+  DebugSerialPrintFmt(pData[2], HEX);
+  DebugSerialPrintFmt(pData[3], HEX);
+  DebugSerialPrintLnFmt(pData[4], HEX);
 
   /*bool const hasWheel = static_cast<bool>(pData[0] & 0x1);
 
