@@ -1,5 +1,5 @@
 // Standard Libraries
-#include <stdint.h>
+#include <cstdint>
 
 // Arduino Libraries
 #include <BLEDevice.h>
@@ -8,6 +8,7 @@
 // Local
 #include "DisplayManager.h"
 #include "DebugSerial.h"
+#include "CadenceSensorApp.h"
 
 typedef struct {
   uint32_t prevCumlativeCranks;
@@ -39,6 +40,8 @@ static DisplayManager display;
 static BLERemoteCharacteristic* pRemoteCharacteristic{ nullptr };
 static BLEAdvertisedDevice* cadenceSensor{ nullptr };
 static CadenceData cadenceData{ 0 };
+
+static CadenceSensorApp app;
 
 // Called on connect or disconnect
 class ClientCallback : public BLEClientCallbacks {
@@ -168,6 +171,11 @@ void setup() {
   DebugSerialReady();
   DebugSerialInfo("Starting cadence-sensor version " VERSION " ...");
 
+  if (false == app.initialize())
+  {
+    while(1){};
+  }
+
   display.splash();
   display.clear();
   display.insert_line("Starting cadence-sensor version " VERSION " ...");
@@ -194,6 +202,7 @@ void setup() {
 }
 
 void loop() {
+  app.step();
   if (false == connected) {
     DebugSerialInfo("Not connected, rescanning");
     BLEDevice::getScan()->stop();

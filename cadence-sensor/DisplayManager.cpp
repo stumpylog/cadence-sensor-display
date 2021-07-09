@@ -5,7 +5,7 @@
 
 #include <cstring>
 
-DisplayManager::DisplayManager() :
+DisplayManager::DisplayManager(void) :
   Adafruit_SH1107(64, 128, &Wire),
   head_idx{ -1},
   tail_idx{ -1}
