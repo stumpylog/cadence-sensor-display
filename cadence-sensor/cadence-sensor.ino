@@ -24,6 +24,8 @@ static constexpr uint8_t BUTTON_C{ 14 };
 #define VERSION "0.0.1"
 static CadenceSensorApp app(scanCompleteCB, notifyCallback);
 
+DisplayManager display;
+
 static void scanCompleteCB(BLEScanResults results) {
   app.setScanComplete();
 }
@@ -42,11 +44,10 @@ void setup() {
     DebugSerialErr("App init failed");
     while(1){};
   }
-
   DebugSerialInfo("Setup completed");
 }
 
 void loop() {
   app.step();
-  delay(500);
+  delay(100);
 }

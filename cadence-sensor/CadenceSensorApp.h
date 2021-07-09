@@ -53,6 +53,7 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     bool connect(void);
 
     uint8_t scanCount;
+    uint8_t scanCyles;
 };
 
 #endif

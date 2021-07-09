@@ -31,7 +31,8 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     pScanCompletedCB{ pScanCompleteCallBack },
     pNotifyCompletedCB{ pNotifyCallBack },
     display(),
-    scanCount{ 0 } {}
+    scanCount{ 0 },
+    scanCyles{ 0 } {}
 
 CadenceSensorApp::~CadenceSensorApp(void) {
   if (nullptr != cadenceSensor) {
@@ -47,7 +48,12 @@ bool CadenceSensorApp::initialize(void) {
   pBLEScan->setInterval(1349);
   pBLEScan->setWindow(449);
   pBLEScan->setActiveScan(true);
+
+  display.initialize();
+
   DebugSerialInfo("CadenceSensorApp init completed");
+  display.insert_line("init completed");
+  display.println_lines();
   return true;
 }
 
@@ -64,16 +70,22 @@ void CadenceSensorApp::step(void) {
         if (true == pBLEScan->start(11, pScanCompletedCB, false)) {
           nextState = AppState_t::SCAN_RUNNING;
           scanCount++;
+          scanCyles = 0;
           DebugSerialInfo("BLE scan started");
+          display.insert_line("BLE scan started");
+          display.println_lines();
         } else {
           // TODO Handle error on start of scanning
-          DebugSerialErr("Starting BLE scan");
+          DebugSerialErr("BLE scan start");
         }
       }
       break;
     case AppState_t::SCAN_RUNNING:
       // Nothing to do
-      DebugSerialPrint(".");
+      if ((scanCyles % 5) == 0) {
+        DebugSerialPrint(".");
+      }
+      scanCyles++;
       break;
     case AppState_t::CONNECT_TO_SENSOR:
       DebugSerialPrintLn("");
@@ -91,6 +103,7 @@ void CadenceSensorApp::step(void) {
       // TODO - output
       DebugSerialPrint("Cadence: ");
       DebugSerialPrintLn(cadenceData.calculatedCadence);
+      display.display_cadence(cadenceData.calculatedCadence);
       break;
     case AppState_t::SENSOR_DISCONNECT:
       DebugSerialErr("BLE sensor disconnected, retrying connection");
@@ -147,6 +160,8 @@ bool CadenceSensorApp::connect(void) {
   }
 
   DebugSerialInfo("Successful connection to sensor");
+  display.insert_line("connected to sensor");
+  display.println_lines();
   return true;
 }
 
@@ -162,6 +177,8 @@ void CadenceSensorApp::onResult(BLEAdvertisedDevice advertisedDevice) {
   // We have found a device, let us now see if it contains the service we are looking for.
   if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(CycleSpeedAndCadenceServiceUUID)) {
     DebugSerialInfo("BLE Device with CSC service found");
+    display.insert_line("CSC service found");
+    display.println_lines();
     pBLEScan->stop();
     pBLEScan->clearResults();
     cadenceSensor = new BLEAdvertisedDevice(advertisedDevice);
