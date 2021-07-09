@@ -31,8 +31,7 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     pScanCompletedCB{ pScanCompleteCallBack },
     pNotifyCompletedCB{ pNotifyCallBack },
     display(),
-    scanCount{ 0 },
-    aborted{ false } {}
+    scanCount{ 0 } {}
 
 CadenceSensorApp::~CadenceSensorApp(void) {
   if (nullptr != cadenceSensor) {
@@ -97,11 +96,11 @@ void CadenceSensorApp::step(void) {
       DebugSerialErr("BLE sensor disconnected, retrying connection");
       nextState = AppState_t::CONNECT_TO_SENSOR;
       break;
+    case AppState_t::ABORT_NOTIFY:
+      DebugSerialErr("Unable to locate sensor in 10 scans, aborting");
+      nextState = AppState_t::ABORT;
+      break;
     case AppState_t::ABORT:
-      if (false == aborted) {
-        DebugSerialErr("Unable to locate sensor in 10 scans");
-      }
-      aborted = true;
       break;
     default:
       break;
@@ -230,8 +229,10 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     uint32_t const timeDelta = (timeRollover + lastCrankTime) - cadenceData.prevLastWheelEventTime;
     float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_TO_MIN_SCALE;
 
+    // Calculate RPM
     cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
 
+    // Save current data as last
     cadenceData.prevCumlativeCranks = cumulativeCrankRev;
     cadenceData.prevLastWheelEventTime = lastCrankTime;
   } else {

@@ -38,6 +38,7 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
       DISPLAY_CADENCE,
       SENSOR_DISCONNECT,
       DISPLAY_BATTERY,
+      ABORT_NOTIFY,
       ABORT,
     };
     AppState_t state;
@@ -52,7 +53,6 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     bool connect(void);
 
     uint8_t scanCount;
-    bool aborted;
 };
 
 #endif
