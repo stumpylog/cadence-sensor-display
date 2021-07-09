@@ -31,7 +31,8 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     pScanCompletedCB{ pScanCompleteCallBack },
     pNotifyCompletedCB{ pNotifyCallBack },
     display(),
-    scanCount{ 0 } {}
+    scanCount{ 0 },
+    aborted{ false } {}
 
 CadenceSensorApp::~CadenceSensorApp(void) {
   if (nullptr != cadenceSensor) {
@@ -97,7 +98,10 @@ void CadenceSensorApp::step(void) {
       nextState = AppState_t::CONNECT_TO_SENSOR;
       break;
     case AppState_t::ABORT:
-      DebugSerialErr("Unable to locate sensor in 10 scans");
+      if (false == aborted) {
+        DebugSerialErr("Unable to locate sensor in 10 scans");
+      }
+      aborted = true;
       break;
     default:
       break;
