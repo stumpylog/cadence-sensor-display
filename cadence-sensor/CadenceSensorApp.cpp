@@ -3,14 +3,6 @@
 // Local
 #include "DebugSerial.h"
 
-// Types
-typedef struct {
-  uint16_t prevCumlativeCranks;
-  uint16_t prevLastWheelEventTime;
-  uint16_t calculatedCadence;
-  uint8_t staleness;
-} CadenceData;
-
 // Constants
 // Bluetooth - speed & cadence UUID
 static BLEUUID const CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816));
@@ -21,9 +13,6 @@ static constexpr uint8_t SENSOR_STALENESS_LIMIT{ 4 };
 static constexpr float_t SENSOR_TIME_RESOLUTION{ 1024.0f };
 static constexpr float_t SECONDS_PER_MINUTE{ 60.0f };
 
-// Globals
-static CadenceData cadenceData{ 0 };
-
 CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BLENotifyCB_t pNotifyCallBack)
   : state{ AppState_t::SCAN_DEVICES },
     pBLEScan{ nullptr },
@@ -32,7 +21,8 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     pNotifyCompletedCB{ pNotifyCallBack },
     display(),
     scanCount{ 0 },
-    scanCyles{ 0 } {}
+    scanCyles{ 0 },
+    cadenceData{ 0 } {}
 
 CadenceSensorApp::~CadenceSensorApp(void) {
   if (nullptr != cadenceSensor) {
@@ -99,9 +89,13 @@ void CadenceSensorApp::step(void) {
       break;
     case AppState_t::DISPLAY_CADENCE:
       // TODO - output
-      DebugSerialPrint("Cadence: ");
-      DebugSerialPrintLn(cadenceData.calculatedCadence);
-      display.display_cadence(cadenceData.calculatedCadence);
+      if (cadenceData.calculatedCadence != cadenceData.lastDisplayedCadence) {
+        DebugSerialPrint("Cadence: ");
+        DebugSerialPrintLn(cadenceData.calculatedCadence);
+        display.display_cadence(cadenceData.calculatedCadence);
+        cadenceData.lastDisplayedCadence =  cadenceData.calculatedCadence;
+      }
+
       break;
     case AppState_t::SENSOR_DISCONNECT:
       DebugSerialErr("BLE sensor disconnected, retrying connection");
@@ -245,7 +239,7 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     } else if ((0 == timeDelta) && (cadenceData.staleness <= SENSOR_STALENESS_LIMIT)) {
       cadenceData.staleness++;
     } else if (cadenceData.staleness > SENSOR_STALENESS_LIMIT) {
-      cadenceData.calculatedCadence = 999;
+      cadenceData.calculatedCadence = 0;
     }
 
   } else {

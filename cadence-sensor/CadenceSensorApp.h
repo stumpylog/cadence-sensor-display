@@ -13,6 +13,14 @@
 #include "IApplication.h"
 #include "DisplayManager.h"
 
+// Types
+typedef struct {
+  uint32_t prevCumlativeCranks;
+  uint16_t prevLastWheelEventTime;
+  uint8_t calculatedCadence;
+  uint8_t lastDisplayedCadence;
+  uint8_t staleness;
+} CadenceData;
 typedef void (BLEScanCompleteCB_t)(BLEScanResults);
 typedef void (BLENotifyCB_t)(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
 
@@ -53,6 +61,8 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
 
     uint8_t scanCount;
     uint8_t scanCyles;
+
+    CadenceData cadenceData;
 };
 
 #endif
