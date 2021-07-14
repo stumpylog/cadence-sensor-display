@@ -3,27 +3,33 @@
 // Arduino Libraries
 #include <Wire.h>
 
+// Standard Libraries
 #include <cstring>
+
+// Local
+#include "DebugSerial.h"
 
 DisplayManager::DisplayManager(void) :
   Adafruit_SH1107(64, 128, &Wire),
-  head_idx{ -1},
-  tail_idx{ -1}
+  head_idx{ -1 },
+  tail_idx{ -1 },
+  cadence_setup{ false } {}
+
+
+void DisplayManager::initialize(void)
 {
-  this->begin(DISPLAY_ADDR, true);
+  while (false == this->begin(DISPLAY_ADDR, true))
+  {
+    DebugSerialErr("starting display.begin");
+    delay(100);
+  }
   this->landscape();
   this->setTextSize(1);
   this->setTextColor(SH110X_WHITE);
   this->position(0, 0);
+  this->clear();
 }
-
 DisplayManager::~DisplayManager(void) {}
-
-void DisplayManager::splash(void)
-{
-  this->display();
-  delay(1000);
-}
 
 void DisplayManager::clear(void)
 {
@@ -68,6 +74,8 @@ void DisplayManager::insert_line(char const s[])
 
 void DisplayManager::println_lines(void)
 {
+  this->clear();
+  this->position(0, 0);
   if (this->head_idx != -1)
   {
     if (this->tail_idx >= this->head_idx)
@@ -88,4 +96,17 @@ void DisplayManager::println_lines(void)
       }
     }
   }
+  this->display();
+}
+
+void DisplayManager::display_cadence(uint32_t const cadence) {
+  if (false == cadence_setup) {
+    this->setTextSize(CADENCE_FONT_SIZE);
+    this->clear_lines();
+    cadence_setup = true;
+  }
+  this->position(CADENCE_FONT_CENTER_X, CADENCE_FONT_CENTER_Y);
+  this->clear();
+  this->print(cadence);
+  this->display();
 }
