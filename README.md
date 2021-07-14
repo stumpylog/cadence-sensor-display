@@ -6,11 +6,23 @@
   - [Software](#software)
     - [Display Driver](#display-driver)
     - [Board](#board)
-    - [Other](#other)
+    - [Bluetooth Low Energy](#bluetooth-low-energy)
   - [Other Reading](#other-reading)
     - [Bluetooth Standards](#bluetooth-standards)
+  - [Design](#design)
+    - [Initialization](#initialization)
+    - [State Flow](#state-flow)
+      - [SCAN_DEVICES](#scan_devices)
+      - [SCAN_RUNNING](#scan_running)
+      - [CONNECT_TO_SENSOR](#connect_to_sensor)
+      - [DISPLAY_CADENCE](#display_cadence)
+      - [SENSOR_DISCONNECT](#sensor_disconnect)
+      - [ABORT_NOTIFY](#abort_notify)
+      - [ABORT](#abort)
 
 ## Introduction
+
+This is a project to receive, calculate and display the cadence from a BLE device using the Cycling Speed and Cadence service.  It uses the below listed hardware and
 
 ## Bill of Materials
 
@@ -23,19 +35,17 @@
 
 ### Display Driver
 
-* https://learn.adafruit.com/adafruit-128x64-oled-featherwing/arduino-code
-  * https://github.com/adafruit/Adafruit_SH110x
-* https://learn.adafruit.com/adafruit-gfx-graphics-library
-  * https://github.com/adafruit/Adafruit-GFX-Library
+* [Adafruit_SH110x](https://github.com/adafruit/Adafruit_SH110x)
+* [Adafruit-GFX-Library](https://github.com/adafruit/Adafruit-GFX-Library)
+
 
 ### Board
 
-* https://github.com/espressif/arduino-esp32/blob/master/docs/arduino-ide/boards_manager.md
+* [espressif/arduino-esp32](https://github.com/espressif/arduino-esp32/blob/master/docs/arduino-ide/boards_manager.md)
 
-### Other
+### Bluetooth Low Energy
 
-* https://circuitpython.org/
-* https://github.com/adafruit/Adafruit_CircuitPython_BLE_Cycling_Speed_and_Cadence
+* [ESP32 BLE Arduino](https://www.arduino.cc/reference/en/libraries/esp32-ble-arduino/)
 
 ## Other Reading
 
@@ -47,3 +57,62 @@
 
 * [CSC Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.cycling_speed_and_cadence.xml)
 * [CSC Measurement Characteristic](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Characteristics/org.bluetooth.characteristic.csc_measurement.xml)
+
+## Design
+
+The software is implemented as a state machine.  During `setup`, the application's `initialize` method is called.  After setup, `loop` calls the applications `step`, where all state and logic will be executed.
+
+### Initialization
+
+During the `initialize`, the application will set up the display, connecting to it over I2C using the default address.  Next, the BLE stack is initialized and certain scan settings are set, including registering the class as the callback for `onResult` of a BLE advertised device being found.
+
+
+### State Flow
+
+![](img/cadence-state.png)
+
+#### SCAN_DEVICES
+
+The first order of business is to locate the cadence sensor.  During `SCAN_DEVICES` the BLE scan is started with a callback registered for the completion of the scan.
+
+If the scan has happened 10 or fewer times, the state will transition to `SCAN_RUNNING`.
+
+If the scan has happened 11 or more times, the state will transition to `ABORT_NOTIFY`.
+
+#### SCAN_RUNNING
+
+During `SCAN_RUNNING`, the application only outputs some information to the serial interface.
+
+If no devices advertising the CSC service are found during this scan, the state will transition back to `SCAN_DEVICES`.
+
+If a device is found advertising the CSC service, the `onResult` method will transition the state to `CONNECT_TO_SENSOR`.
+
+#### CONNECT_TO_SENSOR
+
+During `CONNECT_TO_SENSOR`, a remote device is connected to and the notify characteristic is set with the notify callback.
+
+If connection fails, the state will transition to `SCAN_DEVICES`.
+
+If the connection succeeds, the state will transition to `DISPLAY_CADENCE`.
+
+#### DISPLAY_CADENCE
+
+During `DISPLAY_CADENCE`, the cadence is displayed, if it has changed.  The cadence is calculated by the notify callback, as sent by the sensor when the characteristic changes.
+
+If the `onDisconnect` callback is called, the state will transition to `SENSOR_DISCONNECT`.
+
+Otherwise, the application is expected to remain in this state until power off.
+
+#### SENSOR_DISCONNECT
+
+During `SENSOR_DISCONNECT`, a serial message is sent to notify the sensor has disconnected.
+
+The state will transition to `CONNECT_TO_SENSOR`.
+
+#### ABORT_NOTIFY
+
+The state will transition to `ABORT`.
+
+#### ABORT
+
+The state will never transition.
