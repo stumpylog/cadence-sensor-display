@@ -3,7 +3,11 @@
 // Arduino Libraries
 #include <Wire.h>
 
+// Standard Libraries
 #include <cstring>
+
+// Local
+#include "DebugSerial.h"
 
 DisplayManager::DisplayManager(void) :
   Adafruit_SH1107(64, 128, &Wire),
@@ -14,7 +18,11 @@ DisplayManager::DisplayManager(void) :
 
 void DisplayManager::initialize(void)
 {
-  this->begin(DISPLAY_ADDR, true);
+  while (false == this->begin(DISPLAY_ADDR, true))
+  {
+    DebugSerialErr("starting display.begin");
+    delay(100);
+  }
   this->landscape();
   this->setTextSize(1);
   this->setTextColor(SH110X_WHITE);
@@ -66,7 +74,7 @@ void DisplayManager::insert_line(char const s[])
 
 void DisplayManager::println_lines(void)
 {
-  this->clearDisplay();
+  this->clear();
   this->position(0, 0);
   if (this->head_idx != -1)
   {
@@ -98,7 +106,7 @@ void DisplayManager::display_cadence(uint32_t const cadence) {
     cadence_setup = true;
   }
   this->position(CADENCE_FONT_CENTER_X, CADENCE_FONT_CENTER_Y);
-  this->clearDisplay();
+  this->clear();
   this->print(cadence);
   this->display();
 }

@@ -3,18 +3,14 @@
 // Local
 #include "DebugSerial.h"
 
-// Constants
-// Bluetooth - speed & cadence UUID
-static BLEUUID const CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816));
-// Bluetooth - notify UUID
-static BLEUUID const NotifyCharacteristicUUID(static_cast<uint16_t>(0x2a5b));
-// Sensor - staleness cycles
-static constexpr uint8_t SENSOR_STALENESS_LIMIT{ 4 };
-static constexpr float_t SENSOR_TIME_RESOLUTION{ 1024.0f };
-static constexpr float_t SECONDS_PER_MINUTE{ 60.0f };
+// Types
+
+// Globals
 
 CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BLENotifyCB_t pNotifyCallBack)
-  : state{ AppState_t::SCAN_DEVICES },
+  : CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816)),
+    NotifyCharacteristicUUID(static_cast<uint16_t>(0x2a5b)),
+    state{ AppState_t::SCAN_DEVICES },
     pBLEScan{ nullptr },
     cadenceSensor{ nullptr },
     pScanCompletedCB{ pScanCompleteCallBack },
@@ -22,7 +18,11 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     display(),
     scanCount{ 0 },
     scanCyles{ 0 },
-    cadenceData{ 0 } {}
+    prevCumlativeCranks{ 0 },
+    prevLastWheelEventTime{ 0 },
+    calculatedCadence{ 0 },
+    lastDisplayedCadence{ 0 },
+    sensorStaleness{ 0 } {}
 
 CadenceSensorApp::~CadenceSensorApp(void) {
   if (nullptr != cadenceSensor) {
@@ -32,18 +32,25 @@ CadenceSensorApp::~CadenceSensorApp(void) {
 }
 
 bool CadenceSensorApp::initialize(void) {
+
+  DebugSerialInfo("init starting");
+  display.insert_line("init starting");
+
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan();
   pBLEScan->setAdvertisedDeviceCallbacks(this);
   pBLEScan->setInterval(1349);
   pBLEScan->setWindow(449);
   pBLEScan->setActiveScan(true);
+  DebugSerialInfo("BLE init complete");
 
   display.initialize();
+  DebugSerialInfo("display init complete");
 
-  DebugSerialInfo("CadenceSensorApp init completed");
+  DebugSerialInfo("init completed");
   display.insert_line("init completed");
   display.println_lines();
+
   return true;
 }
 
@@ -51,11 +58,11 @@ void CadenceSensorApp::step(void) {
 
   DebugSerialVerbose("Starting")
 
-    AppState_t nextState{ state };
+  AppState_t nextState{ state };
   switch (state) {
     case AppState_t::SCAN_DEVICES:
       if (scanCount > 10) {
-        nextState = AppState_t::ABORT;
+        nextState = AppState_t::ABORT_NOTIFY;
       } else {
         if (true == pBLEScan->start(11, pScanCompletedCB, false)) {
           nextState = AppState_t::SCAN_RUNNING;
@@ -88,14 +95,12 @@ void CadenceSensorApp::step(void) {
       }
       break;
     case AppState_t::DISPLAY_CADENCE:
-      // TODO - output
-      if (cadenceData.calculatedCadence != cadenceData.lastDisplayedCadence) {
+      if (calculatedCadence != lastDisplayedCadence) {
         DebugSerialPrint("Cadence: ");
-        DebugSerialPrintLn(cadenceData.calculatedCadence);
-        display.display_cadence(cadenceData.calculatedCadence);
-        cadenceData.lastDisplayedCadence =  cadenceData.calculatedCadence;
+        DebugSerialPrintLn(calculatedCadence);
+        display.display_cadence(calculatedCadence);
+        lastDisplayedCadence =  calculatedCadence;
       }
-
       break;
     case AppState_t::SENSOR_DISCONNECT:
       DebugSerialErr("BLE sensor disconnected, retrying connection");
@@ -210,36 +215,41 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     DebugSerialPrint("Cranks: ");
     DebugSerialPrintLn(cumulativeCrankRev);
     DebugSerialPrint("P-Cranks: ");
-    DebugSerialPrintLn(cadenceData.prevCumlativeCranks);
+    DebugSerialPrintLn(prevCumlativeCranks);
     DebugSerialPrint("Time: ");
     DebugSerialPrintLn(lastCrankTime);
     DebugSerialPrint("P-Time: ");
-    DebugSerialPrintLn(cadenceData.prevLastWheelEventTime);
+    DebugSerialPrintLn(prevLastWheelEventTime);
 
-    int32_t deltaRotations = cumulativeCrankRev - cadenceData.prevCumlativeCranks;
+    int32_t deltaRotations = cumulativeCrankRev - prevCumlativeCranks;
     if (deltaRotations < 0) {
       // Roll over
+      DebugSerialInfo("Rotations rollover");
       deltaRotations += 0xFFFF;
     }
 
-    int32_t timeDelta = lastCrankTime - cadenceData.prevLastWheelEventTime;
+    int32_t timeDelta = lastCrankTime - prevLastWheelEventTime;
     if (timeDelta < 0) {
       // Roll over
+      DebugSerialInfo("Time rollover");
       timeDelta += 0xFFFF;
     }
 
     if (timeDelta != 0) {
-      cadenceData.staleness = 0;
+      sensorStaleness = 0;
+      // Convert event time delta to a time in minutes
       float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_RESOLUTION / SECONDS_PER_MINUTE;
       // Calculate new RPM
-      cadenceData.calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
-      // Save current data as previous
-      cadenceData.prevCumlativeCranks = cumulativeCrankRev;
-      cadenceData.prevLastWheelEventTime = lastCrankTime;
-    } else if ((0 == timeDelta) && (cadenceData.staleness <= SENSOR_STALENESS_LIMIT)) {
-      cadenceData.staleness++;
-    } else if (cadenceData.staleness > SENSOR_STALENESS_LIMIT) {
-      cadenceData.calculatedCadence = 0;
+      calculatedCadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
+      // Save current data as previous for the next time
+      prevCumlativeCranks = cumulativeCrankRev;
+      prevLastWheelEventTime = lastCrankTime;
+    } else if ((0 == timeDelta) && (sensorStaleness <= SENSOR_STALENESS_LIMIT)) {
+      // Keep the same value as before
+      sensorStaleness++;
+    } else if (sensorStaleness > SENSOR_STALENESS_LIMIT) {
+      // Very stale, set to 0
+      calculatedCadence = 0;
     }
 
   } else {

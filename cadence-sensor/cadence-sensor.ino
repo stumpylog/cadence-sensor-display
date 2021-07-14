@@ -10,7 +10,7 @@
 #include "DebugSerial.h"
 #include "CadenceSensorApp.h"
 
-// Definitions
+// Declaration
 static void scanCompleteCB(BLEScanResults);
 static void notifyCallback(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
 
@@ -36,13 +36,13 @@ static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, ui
 
 void setup() {
   DebugSerialStart(115200);
-  DebugSerialReady();
+  //DebugSerialReady();
   DebugSerialInfo("Starting cadence-sensor version " VERSION " ...");
 
   if (false == app.initialize())
   {
     DebugSerialErr("App init failed");
-    while(1){};
+    while (1) {};
   }
   DebugSerialInfo("Setup completed");
 }
@@ -50,4 +50,5 @@ void setup() {
 void loop() {
   app.step();
   delay(100);
+  yield();
 }

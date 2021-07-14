@@ -38,6 +38,7 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     void notify(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
 
   private:
+    // Types
     enum class AppState_t : uint8_t {
       SCAN_DEVICES = 0,
       SCAN_RUNNING,
@@ -48,21 +49,42 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
       ABORT_NOTIFY,
       ABORT,
     };
-    AppState_t state;
 
+    // Constants
+    // Bluetooth - speed & cadence UUID
+    BLEUUID const CycleSpeedAndCadenceServiceUUID;
+    // Bluetooth - notify UUID
+    BLEUUID const NotifyCharacteristicUUID;
+    // Sensor - staleness cycles
+    static constexpr uint8_t SENSOR_STALENESS_LIMIT{ 4 };
+    // Sensor - last event time resolution
+    static constexpr float_t SENSOR_TIME_RESOLUTION{ 1024.0f };
+    static constexpr float_t SECONDS_PER_MINUTE{ 60.0f };
+
+    // Methods
+    bool connect(void);
+
+    // Fields
+    // Current state
+    AppState_t state;
+    // BLE related
     BLEScan* pBLEScan;
     BLEAdvertisedDevice* cadenceSensor;
     BLEScanCompleteCB_t* pScanCompletedCB;
     BLENotifyCB_t* pNotifyCompletedCB;
-
+    // Display
     DisplayManager display;
 
-    bool connect(void);
-
+    // BLE scanning counters
     uint8_t scanCount;
     uint8_t scanCyles;
 
-    CadenceData cadenceData;
+    // Sensor data
+    uint16_t prevCumlativeCranks;
+    uint16_t prevLastWheelEventTime;
+    uint16_t calculatedCadence;
+    uint16_t lastDisplayedCadence;
+    uint8_t sensorStaleness;
 };
 
 #endif

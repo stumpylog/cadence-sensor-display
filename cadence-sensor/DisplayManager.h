@@ -40,7 +40,7 @@ class DisplayManager : public Adafruit_SH1107 {
     static constexpr uint8_t CADENCE_FONT_CENTER_Y{ 5 };
     int8_t head_idx;
     int8_t tail_idx;
-    char lines[DISPLAY_MAX_LINES][DISPLAY_MAX_CHARS_PER_LINE] = {{0}};
+    char lines[DISPLAY_MAX_LINES][DISPLAY_MAX_CHARS_PER_LINE]{{ 0 }};
     bool cadence_setup;
 
 };
