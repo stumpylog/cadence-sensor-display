@@ -63,6 +63,9 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     static constexpr float_t SENSOR_TIME_RESOLUTION{ 1024.0f };
     static constexpr float_t SECONDS_PER_MINUTE{ 60.0f };
 
+    static constexpr uint8_t SCAN_TIME_SECS { 30 };
+    static constexpr uint8_t MAX_SCANS { 10 };
+
     // Methods
     bool connect(void);
 

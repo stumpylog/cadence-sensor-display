@@ -76,6 +76,8 @@ During the `initialize`, the application will set up the display, connecting to 
 
 The first order of business is to locate the cadence sensor.  During `SCAN_DEVICES` the BLE scan is started with a callback registered for the completion of the scan.
 
+The scan will run at most 10 times, for 30 seconds per scan.
+
 If the scan has happened 10 or fewer times, the state will transition to `SCAN_RUNNING`.
 
 If the scan has happened 11 or more times, the state will transition to `ABORT_NOTIFY`.
@@ -108,11 +110,11 @@ Otherwise, the application is expected to remain in this state until power off.
 
 During `SENSOR_DISCONNECT`, a serial message is sent to notify the sensor has disconnected.
 
-The state will transition to `CONNECT_TO_SENSOR`.
+The state will transition to `SCAN_DEVICES`.
 
 #### ABORT_NOTIFY
 
-The state will transition to `ABORT`.
+The state will transition to `ABORT`, after notifying over serial and on the display of the failure to locate a sensor.
 
 #### ABORT
 

@@ -56,6 +56,7 @@ void loop() {
   app.step();
   if ((LOW == digitalRead(BUTTON_C)) || true == app.sleep)
   {
+    DebugSerialInfo("Starting deep sleep");
     esp_deep_sleep_start();
   }
   delay(100);

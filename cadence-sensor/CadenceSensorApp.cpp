@@ -78,10 +78,10 @@ void CadenceSensorApp::step(void) {
   AppState_t nextState{ state };
   switch (state) {
     case AppState_t::SCAN_DEVICES:
-      if (scanCount > 10) {
+      if (scanCount > (MAX_SCANS - 1 )) {
         nextState = AppState_t::ABORT_NOTIFY;
       } else {
-        if (true == pBLEScan->start(30, pScanCompletedCB, false)) {
+        if (true == pBLEScan->start(SCAN_TIME_SECS, pScanCompletedCB, false)) {
           nextState = AppState_t::SCAN_RUNNING;
           scanCount++;
           scanCycles = 0;
@@ -96,7 +96,7 @@ void CadenceSensorApp::step(void) {
       break;
     case AppState_t::SCAN_RUNNING:
       // Nothing to do
-      if ((scanCycles % 5) == 0) {
+      if ((scanCycles % 10) == 0) {
         DebugSerialPrint(".");
       }
       scanCycles++;
@@ -125,9 +125,13 @@ void CadenceSensorApp::step(void) {
       break;
     case AppState_t::ABORT_NOTIFY:
       DebugSerialErr("Unable to locate sensor in 10 scans, aborting");
+      display.insert_line("BLE scan aborted");
+      display.println_lines();
       nextState = AppState_t::ABORT;
       break;
     case AppState_t::ABORT:
+      display.insert_line("Entering deep sleep");
+      display.println_lines();
       sleep = true;
       break;
     default:
