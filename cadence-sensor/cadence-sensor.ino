@@ -21,7 +21,7 @@ static constexpr uint8_t BUTTON_B{ GPIO_NUM_32 };
 static constexpr uint8_t BUTTON_C{ GPIO_NUM_14 };
 
 // Program version
-#define VERSION "0.0.1"
+#define VERSION "0.0.2"
 static CadenceSensorApp app(scanCompleteCB, notifyCallback);
 
 DisplayManager display;
