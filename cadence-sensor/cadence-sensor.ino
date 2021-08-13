@@ -16,9 +16,9 @@ static void notifyCallback(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
 
 // Constants
 // Display - Buttons
-static constexpr uint8_t BUTTON_A{ 15 };
-static constexpr uint8_t BUTTON_B{ 32 };
-static constexpr uint8_t BUTTON_C{ 14 };
+static constexpr uint8_t BUTTON_A{ GPIO_NUM_15 };
+static constexpr uint8_t BUTTON_B{ GPIO_NUM_32 };
+static constexpr uint8_t BUTTON_C{ GPIO_NUM_14 };
 
 // Program version
 #define VERSION "0.0.1"
@@ -44,11 +44,21 @@ void setup() {
     DebugSerialErr("App init failed");
     while (1) {};
   }
+
+  pinMode(BUTTON_A, INPUT_PULLUP);
+  pinMode(BUTTON_C, INPUT_PULLUP);
+  esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_A), 0);
+
   DebugSerialInfo("Setup completed");
 }
 
 void loop() {
   app.step();
+  if ((LOW == digitalRead(BUTTON_C)) || true == app.sleep)
+  {
+    DebugSerialInfo("Starting deep sleep");
+    esp_deep_sleep_start();
+  }
   delay(100);
   yield();
 }

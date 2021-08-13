@@ -37,6 +37,8 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     void setScanComplete(void);
     void notify(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
 
+    bool sleep;
+
   private:
     // Types
     enum class AppState_t : uint8_t {
@@ -61,6 +63,9 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     static constexpr float_t SENSOR_TIME_RESOLUTION{ 1024.0f };
     static constexpr float_t SECONDS_PER_MINUTE{ 60.0f };
 
+    static constexpr uint8_t SCAN_TIME_SECS { 30 };
+    static constexpr uint8_t MAX_SCANS { 10 };
+
     // Methods
     bool connect(void);
 
@@ -77,7 +82,7 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
 
     // BLE scanning counters
     uint8_t scanCount;
-    uint8_t scanCyles;
+    uint8_t scanCycles;
 
     // Sensor data
     uint16_t prevCumlativeCranks;

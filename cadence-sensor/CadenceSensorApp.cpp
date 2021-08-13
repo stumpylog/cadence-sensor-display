@@ -8,7 +8,8 @@
 // Globals
 
 CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BLENotifyCB_t pNotifyCallBack)
-  : CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816)),
+  : sleep { false },
+    CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816)),
     NotifyCharacteristicUUID(static_cast<uint16_t>(0x2a5b)),
     state{ AppState_t::SCAN_DEVICES },
     pBLEScan{ nullptr },
@@ -17,12 +18,12 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     pNotifyCompletedCB{ pNotifyCallBack },
     display(),
     scanCount{ 0 },
-    scanCyles{ 0 },
+    scanCycles{ 0 },
     prevCumlativeCranks{ 0 },
     prevLastWheelEventTime{ 0 },
     calculatedCadence{ 0 },
     lastDisplayedCadence{ 0 },
-    sensorStaleness{ 0 } {}
+    sensorStaleness{ 0 } { }
 
 CadenceSensorApp::~CadenceSensorApp(void) {
   if (nullptr != cadenceSensor) {
@@ -32,6 +33,22 @@ CadenceSensorApp::~CadenceSensorApp(void) {
 }
 
 bool CadenceSensorApp::initialize(void) {
+
+  // Reset all state and counters
+  sleep = false;
+  state = AppState_t::SCAN_DEVICES;
+  scanCount = 0;
+  scanCycles = 0;
+  prevCumlativeCranks = 0;
+  prevLastWheelEventTime = 0;
+  calculatedCadence = 0;
+  lastDisplayedCadence = 0;
+  sensorStaleness = 0;
+
+  if (nullptr != cadenceSensor) {
+    delete cadenceSensor;
+    cadenceSensor = nullptr;
+  }
 
   DebugSerialInfo("init starting");
   display.insert_line("init starting");
@@ -61,13 +78,13 @@ void CadenceSensorApp::step(void) {
   AppState_t nextState{ state };
   switch (state) {
     case AppState_t::SCAN_DEVICES:
-      if (scanCount > 10) {
+      if (scanCount > (MAX_SCANS - 1 )) {
         nextState = AppState_t::ABORT_NOTIFY;
       } else {
-        if (true == pBLEScan->start(11, pScanCompletedCB, false)) {
+        if (true == pBLEScan->start(SCAN_TIME_SECS, pScanCompletedCB, false)) {
           nextState = AppState_t::SCAN_RUNNING;
           scanCount++;
-          scanCyles = 0;
+          scanCycles = 0;
           DebugSerialInfo("BLE scan started");
           display.insert_line("BLE scan started");
           display.println_lines();
@@ -79,10 +96,10 @@ void CadenceSensorApp::step(void) {
       break;
     case AppState_t::SCAN_RUNNING:
       // Nothing to do
-      if ((scanCyles % 5) == 0) {
+      if ((scanCycles % 10) == 0) {
         DebugSerialPrint(".");
       }
-      scanCyles++;
+      scanCycles++;
       break;
     case AppState_t::CONNECT_TO_SENSOR:
       DebugSerialPrintLn("");
@@ -103,14 +120,19 @@ void CadenceSensorApp::step(void) {
       }
       break;
     case AppState_t::SENSOR_DISCONNECT:
-      DebugSerialErr("BLE sensor disconnected, retrying connection");
-      nextState = AppState_t::CONNECT_TO_SENSOR;
+      DebugSerialErr("BLE sensor disconnected, retrying scan");
+      nextState = AppState_t::SCAN_DEVICES;
       break;
     case AppState_t::ABORT_NOTIFY:
       DebugSerialErr("Unable to locate sensor in 10 scans, aborting");
+      display.insert_line("BLE scan aborted");
+      display.println_lines();
       nextState = AppState_t::ABORT;
       break;
     case AppState_t::ABORT:
+      display.insert_line("Entering deep sleep");
+      display.println_lines();
+      sleep = true;
       break;
     default:
       break;
