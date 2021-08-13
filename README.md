@@ -19,6 +19,7 @@
       - [SENSOR_DISCONNECT](#sensor_disconnect)
       - [ABORT_NOTIFY](#abort_notify)
       - [ABORT](#abort)
+  - [Case](#case)
 
 ## Introduction
 
@@ -116,3 +117,13 @@ The state will transition to `ABORT`.
 #### ABORT
 
 The state will never transition.
+
+## Case
+
+See https://learn.adafruit.com/3d-printed-case-for-adafruit-feather/overview
+
+* feather-case.stl
+* feather-bat-switch.stl
+* feather-top-wing.stl
+
+Also see https://learn.adafruit.com/on-slash-off-switches/overview
