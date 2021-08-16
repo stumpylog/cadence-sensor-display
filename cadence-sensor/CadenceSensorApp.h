@@ -80,9 +80,8 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     // Display
     DisplayManager display;
 
-    // BLE scanning counters
+    // BLE scanning counter
     uint8_t scanCount;
-    uint8_t scanCycles;
 
     // Sensor data
     uint16_t prevCumlativeCranks;
