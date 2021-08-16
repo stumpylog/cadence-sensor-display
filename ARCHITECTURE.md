@@ -1,4 +1,8 @@
 - [Architecture](#architecture)
+  - [Bluetooth Manager](#bluetooth-manager)
+  - [Cadence Calculator](#cadence-calculator)
+  - [Display Manager](#display-manager)
+  - [Power Manager](#power-manager)
   - [Design](#design)
     - [Initialization](#initialization)
     - [State Flow](#state-flow)
@@ -11,6 +15,22 @@
       - [ABORT](#abort)
 
 # Architecture
+
+## Bluetooth Manager
+
+Handle locating the CSC sensor and getting data from it with callbacks.  If the sensor disconnects, attempts to reconnect
+
+## Cadence Calculator
+
+Uses data from the BLE manger to calculate the cadence
+
+## Display Manager
+
+Outputs log information during startup, then battery level, otherwise shows calculated cadence.
+
+## Power Manager
+
+Reads the battery level and displays on startup.  Manages entering and exiting deep sleep mode.
 
 ## Design
 

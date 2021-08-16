@@ -27,6 +27,8 @@ This is a project to receive, calculate and display the cadence from a BLE devic
 
 See https://learn.adafruit.com/3d-printed-case-for-adafruit-feather/overview
 
+See https://www.thingiverse.com/thing:2438577 and https://www.thingiverse.com/thing:2209964
+
 * feather-case.stl
 * feather-bat-switch.stl
 * feather-top-wing.stl

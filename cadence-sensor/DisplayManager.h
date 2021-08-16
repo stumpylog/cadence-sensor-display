@@ -1,6 +1,4 @@
-
-#ifndef DISPLAY_MANAGER_H
-#define DISPLAY_MANAGER_H
+#pragma once
 
 // Standard Libraries
 #include <cstdint>
@@ -8,28 +6,41 @@
 // Display Libraries
 #include <Adafruit_SH110X.h>
 
-class DisplayManager : public Adafruit_SH1107 {
+// Local
+#include "IApplication.h"
+
+class DisplayManager : public IApplication {
   public:
     DisplayManager(void);
     ~DisplayManager(void);
 
-    void initialize(void);
+    bool initialize(void);
 
-    void clear(void);
-
-    void landscape(void);
-
-    void position(int16_t const, int16_t const);
-
-    void clear_lines(void);
-    void insert_line(char const[]);
-    void println_lines(void);
-
-    void display_cadence(uint32_t const);
+    void step(void);
 
   private:
+
+    void _clear(void);
+
+    // Types
+    enum class AppState_t : uint8_t {
+      DISP_VERSION_STATE = 0,
+      VERSION_TRANSITION,
+      DISP_VOLTAGE_STATE,
+      VOLTAGE_TRANSITION,
+      DISP_NO_CADENCE,
+      WAIT_CADENCE,
+      CADENCE_SETUP,
+      DISP_CADENCE_STATE
+    };
+
+    // Constants
     // Display - I2C address
     static constexpr uint8_t DISPLAY_ADDR{ 0x3C };
+    // Display - width
+    static constexpr uint8_t DISPLAY_WIDTH{ 128 };
+    // Display - height
+    static constexpr uint8_t DISPLAY_HEIGHT{ 64 };
     // Display - maximum lines at font size 1
     static constexpr uint8_t DISPLAY_MAX_LINES{ 8 };
     // Display - maximum characters at font size 1
@@ -38,11 +49,12 @@ class DisplayManager : public Adafruit_SH1107 {
     static constexpr uint8_t CADENCE_FONT_SIZE{ 7 };
     static constexpr uint8_t CADENCE_FONT_CENTER_X{ 2 };
     static constexpr uint8_t CADENCE_FONT_CENTER_Y{ 5 };
-    int8_t head_idx;
-    int8_t tail_idx;
-    char lines[DISPLAY_MAX_LINES][DISPLAY_MAX_CHARS_PER_LINE]{{ 0 }};
-    bool cadence_setup;
+    static constexpr uint8_t VERSION_DISPLAY_TICKS{ 20 };
+    static constexpr uint8_t POWER_DISPLAY_TICKS{ 50 };
+
+    // Vars
+    Adafruit_SH1107 _display;
+    AppState_t _state;
+    uint8_t _state_ticks;
 
 };
-
-#endif

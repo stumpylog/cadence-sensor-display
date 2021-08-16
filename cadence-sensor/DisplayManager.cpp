@@ -8,105 +8,107 @@
 
 // Local
 #include "LoggingConfig.h"
+#include "Blackboard.h"
+#include "Version.h"
 
 DisplayManager::DisplayManager(void) :
-  Adafruit_SH1107(64, 128, &Wire),
-  head_idx{ -1 },
-  tail_idx{ -1 },
-  cadence_setup{ false } {}
+  _display(DISPLAY_HEIGHT, DISPLAY_WIDTH, &Wire),
+  _state { AppState_t::DISP_VERSION_STATE },
+  _state_ticks{ 0 } {}
 
-
-void DisplayManager::initialize(void)
-{
-  while (false == this->begin(DISPLAY_ADDR, true))
-  {
-    Log.errorln("starting display.begin");
-    delay(100);
-  }
-  this->landscape();
-  this->setTextSize(1);
-  this->setTextColor(SH110X_WHITE);
-  this->position(0, 0);
-  this->clear();
-}
 DisplayManager::~DisplayManager(void) {}
 
-void DisplayManager::clear(void)
+bool DisplayManager::initialize(void)
 {
-  this->clearDisplay();
-  this->display();
-}
+  bool passed { true };
 
-void DisplayManager::landscape(void)
-{
-  this->setRotation(1);
-}
+  _state = AppState_t::DISP_VERSION_STATE;
 
-void DisplayManager::position(int16_t const x,
-                              int16_t const y)
-{
-  this->setCursor(x, y);
-}
-
-void DisplayManager::clear_lines(void)
-{
-  this->head_idx = -1;
-  this->tail_idx = -1;
-}
-
-void DisplayManager::insert_line(char const s[])
-{
-  if (this->head_idx == -1)
-  {
-    this->head_idx = 0;
-    this->tail_idx = 0;
+  if (false == _display.begin(DISPLAY_ADDR, true)) {
+    Log.errorln("display.begin");
+    passed = false;
+  } else {
+    _display.setRotation(1);
+    _display.setTextSize(1);
+    _display.setTextColor(SH110X_WHITE);
+    _display.setCursor(0, 0);
+    _state_ticks = 0;
+    _clear();
   }
-  else
-  {
-    this->tail_idx = (this->tail_idx + 1) % DISPLAY_MAX_LINES;
-    if (this->tail_idx <= this->head_idx)
-    {
-      this->head_idx = (this->head_idx + 1) % DISPLAY_MAX_LINES;
-    }
-  }
-  strncpy(this->lines[tail_idx], s, DISPLAY_MAX_CHARS_PER_LINE);
+
+  return passed;
 }
 
-void DisplayManager::println_lines(void)
-{
-  this->clear();
-  this->position(0, 0);
-  if (this->head_idx != -1)
-  {
-    if (this->tail_idx >= this->head_idx)
-    {
-      for (int8_t i = this->head_idx; i < (this->tail_idx + 1); i++)
-      {
-        Adafruit_SH1107::println(lines[i]);
+void DisplayManager::step(void) {
+  AppState_t next_state { _state };
+
+  switch (_state) {
+    case AppState_t::DISP_VERSION_STATE:
+      _display.println("Version: " VERSION "");
+      _display.display();
+      next_state = AppState_t::VERSION_TRANSITION;
+      _state_ticks = 0;
+      break;
+    case AppState_t::VERSION_TRANSITION:
+      if (_state_ticks > VERSION_DISPLAY_TICKS) {
+        next_state = AppState_t::DISP_VOLTAGE_STATE;
+        _state_ticks = 0;
       }
-    }
-    else {
-      for (int8_t i = this->head_idx; i < DISPLAY_MAX_LINES; i++)
-      {
-        Adafruit_SH1107::println(lines[i]);
+      break;
+    case AppState_t::DISP_VOLTAGE_STATE:
+      if (true == blackboard.power.valid) {
+        _display.print("Battery: ");
+        _display.println(blackboard.power.percent);
+        _display.display();
       }
-      for (int8_t i = 0; i < (this->tail_idx + 1); i++)
-      {
-        Adafruit_SH1107::println(lines[i]);
+      else {
+        _display.println("No battery info");
+        _display.display();
       }
-    }
+      next_state = AppState_t::VOLTAGE_TRANSITION;
+      break;
+    case AppState_t::VOLTAGE_TRANSITION:
+      if (_state_ticks > POWER_DISPLAY_TICKS) {
+        next_state = AppState_t::CADENCE_SETUP;
+        _state_ticks = 0;
+      }
+      break;
+    case AppState_t::CADENCE_SETUP:
+      if (true == blackboard.cadence.valid) {
+        _clear();
+        _display.setTextSize(CADENCE_FONT_SIZE);
+      } else  {
+        next_state = AppState_t::DISP_NO_CADENCE;
+      }
+      break;
+    case AppState_t::DISP_NO_CADENCE:
+      if (false == blackboard.cadence.valid) {
+        _display.println("No cadence, waiting");
+        _display.display();
+        next_state = AppState_t::WAIT_CADENCE;
+      }
+      break;
+    case AppState_t::WAIT_CADENCE:
+      if (true == blackboard.cadence.valid) {
+        next_state = AppState_t::CADENCE_SETUP;
+      }
+      break;
+    case AppState_t::DISP_CADENCE_STATE:
+      if (true == blackboard.cadence.valid) {
+        _clear();
+        _display.setCursor(CADENCE_FONT_CENTER_X, CADENCE_FONT_CENTER_Y);
+        _display.print(blackboard.cadence.cadence);
+      }
+      break;
   }
-  this->display();
+
+   _state_ticks++;
+
+  _state = next_state;
 }
 
-void DisplayManager::display_cadence(uint32_t const cadence) {
-  if (false == cadence_setup) {
-    this->setTextSize(CADENCE_FONT_SIZE);
-    this->clear_lines();
-    cadence_setup = true;
-  }
-  this->position(CADENCE_FONT_CENTER_X, CADENCE_FONT_CENTER_Y);
-  this->clear();
-  this->print(cadence);
-  this->display();
+void DisplayManager::_clear(void)
+{
+  _display.clearDisplay();
+  _display.display();
 }

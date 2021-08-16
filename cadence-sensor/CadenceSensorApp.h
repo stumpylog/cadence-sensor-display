@@ -77,8 +77,6 @@ class CadenceSensorApp : public IApplication, public BLEAdvertisedDeviceCallback
     BLEAdvertisedDevice* cadenceSensor;
     BLEScanCompleteCB_t* pScanCompletedCB;
     BLENotifyCB_t* pNotifyCompletedCB;
-    // Display
-    DisplayManager display;
 
     // BLE scanning counter
     uint8_t scanCount;
