@@ -1,7 +1,7 @@
 #include "CadenceSensorApp.h"
 
 // Local
-#include "DebugSerial.h"
+#include "LoggingConfig.h"
 
 // Types
 
@@ -18,7 +18,6 @@ CadenceSensorApp::CadenceSensorApp(BLEScanCompleteCB_t pScanCompleteCallBack, BL
     pNotifyCompletedCB{ pNotifyCallBack },
     display(),
     scanCount{ 0 },
-    scanCycles{ 0 },
     prevCumlativeCranks{ 0 },
     prevLastWheelEventTime{ 0 },
     calculatedCadence{ 0 },
@@ -38,7 +37,6 @@ bool CadenceSensorApp::initialize(void) {
   sleep = false;
   state = AppState_t::SCAN_DEVICES;
   scanCount = 0;
-  scanCycles = 0;
   prevCumlativeCranks = 0;
   prevLastWheelEventTime = 0;
   calculatedCadence = 0;
@@ -50,7 +48,7 @@ bool CadenceSensorApp::initialize(void) {
     cadenceSensor = nullptr;
   }
 
-  DebugSerialInfo("init starting");
+  Log.noticeln("init starting");
   display.insert_line("init starting");
 
   BLEDevice::init("");
@@ -59,12 +57,12 @@ bool CadenceSensorApp::initialize(void) {
   pBLEScan->setInterval(1349);
   pBLEScan->setWindow(449);
   pBLEScan->setActiveScan(true);
-  DebugSerialInfo("BLE init complete");
+  Log.noticeln("BLE init complete");
 
   display.initialize();
-  DebugSerialInfo("display init complete");
+  Log.noticeln("display init complete");
 
-  DebugSerialInfo("init completed");
+  Log.noticeln("init completed");
   display.insert_line("init completed");
   display.println_lines();
 
@@ -73,7 +71,7 @@ bool CadenceSensorApp::initialize(void) {
 
 void CadenceSensorApp::step(void) {
 
-  DebugSerialVerbose("Starting")
+  Log.verboseln("Starting step");
 
   AppState_t nextState{ state };
   switch (state) {
@@ -84,28 +82,22 @@ void CadenceSensorApp::step(void) {
         if (true == pBLEScan->start(SCAN_TIME_SECS, pScanCompletedCB, false)) {
           nextState = AppState_t::SCAN_RUNNING;
           scanCount++;
-          scanCycles = 0;
-          DebugSerialInfo("BLE scan started");
+          Log.noticeln("BLE scan started");
           display.insert_line("BLE scan started");
           display.println_lines();
         } else {
           // TODO Handle error on start of scanning
-          DebugSerialErr("BLE scan start");
+          Log.errorln("BLE scan start");
         }
       }
       break;
     case AppState_t::SCAN_RUNNING:
       // Nothing to do
-      if ((scanCycles % 10) == 0) {
-        DebugSerialPrint(".");
-      }
-      scanCycles++;
       break;
     case AppState_t::CONNECT_TO_SENSOR:
-      DebugSerialPrintLn("");
       if (false == connect()) {
         // Handle error
-        DebugSerialErr("Connecting to BLE sensor, retrying scan");
+        Log.errorln("Connecting to BLE sensor, retrying scan");
         nextState = AppState_t::SCAN_DEVICES;
       } else {
         nextState = AppState_t::DISPLAY_CADENCE;
@@ -113,18 +105,17 @@ void CadenceSensorApp::step(void) {
       break;
     case AppState_t::DISPLAY_CADENCE:
       if (calculatedCadence != lastDisplayedCadence) {
-        DebugSerialPrint("Cadence: ");
-        DebugSerialPrintLn(calculatedCadence);
+        Log.noticeln("Cadence: %u", calculatedCadence);
         display.display_cadence(calculatedCadence);
         lastDisplayedCadence =  calculatedCadence;
       }
       break;
     case AppState_t::SENSOR_DISCONNECT:
-      DebugSerialErr("BLE sensor disconnected, retrying scan");
+      Log.errorln("BLE sensor disconnected, retrying scan");
       nextState = AppState_t::SCAN_DEVICES;
       break;
     case AppState_t::ABORT_NOTIFY:
-      DebugSerialErr("Unable to locate sensor in 10 scans, aborting");
+      Log.errorln("Unable to locate sensor in 10 scans, aborting");
       display.insert_line("BLE scan aborted");
       display.println_lines();
       nextState = AppState_t::ABORT;
@@ -151,7 +142,7 @@ bool CadenceSensorApp::connect(void) {
   // Obtain a reference to the service we are after in the remote BLE server.
   BLERemoteService* pRemoteService = pClient->getService(CycleSpeedAndCadenceServiceUUID);
   if (nullptr == pRemoteService) {
-    DebugSerialErr("Unable to obtain CSC service");
+    Log.errorln("Unable to obtain CSC service");
     pClient->disconnect();
     delete pClient;
     pClient = nullptr;
@@ -161,7 +152,7 @@ bool CadenceSensorApp::connect(void) {
   // Obtain a reference to the characteristic in the service of the remote BLE server.
   BLERemoteCharacteristic* pRemoteCharacteristic = pRemoteService->getCharacteristic(NotifyCharacteristicUUID);
   if (nullptr == pRemoteCharacteristic) {
-    DebugSerialErr("Unable to obtain Notify characteristic");
+    Log.errorln("Unable to obtain Notify characteristic");
     pClient->disconnect();
     delete pClient;
     pClient = nullptr;
@@ -171,14 +162,14 @@ bool CadenceSensorApp::connect(void) {
   if (true == pRemoteCharacteristic->canNotify()) {
     pRemoteCharacteristic->registerForNotify(pNotifyCompletedCB);
   } else {
-    DebugSerialErr("Unable to subscribe to notify");
+    Log.errorln("Unable to subscribe to notify");
     pClient->disconnect();
     delete pClient;
     pClient = nullptr;
     return false;
   }
 
-  DebugSerialInfo("Successful connection to sensor");
+  Log.noticeln("Successful connection to sensor");
   display.insert_line("connected to sensor");
   display.println_lines();
 
@@ -195,7 +186,7 @@ void CadenceSensorApp::onDisconnect(BLEClient* pclient) {
 void CadenceSensorApp::onResult(BLEAdvertisedDevice advertisedDevice) {
   // We have found a device, let us now see if it contains the service we are looking for.
   if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(CycleSpeedAndCadenceServiceUUID)) {
-    DebugSerialInfo("BLE Device with CSC service found");
+    Log.noticeln("BLE Device with CSC service found");
     display.insert_line("CSC service found");
     display.println_lines();
     pBLEScan->stop();
@@ -212,7 +203,7 @@ void CadenceSensorApp::setScanComplete(void) {
 }
 
 void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-  DebugSerialPrintLn("Notify Callback");
+  Log.verboseln("Notify Callback");
 
   uint8_t const flags = pData[0];
 
@@ -234,26 +225,22 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     memcpy(&cumulativeCrankRev, &pData[crankRevIndex], sizeof(uint16_t));
     memcpy(&lastCrankTime, &pData[crankTimeIndex], sizeof(uint16_t));
 
-    DebugSerialPrint("Cranks: ");
-    DebugSerialPrintLn(cumulativeCrankRev);
-    DebugSerialPrint("P-Cranks: ");
-    DebugSerialPrintLn(prevCumlativeCranks);
-    DebugSerialPrint("Time: ");
-    DebugSerialPrintLn(lastCrankTime);
-    DebugSerialPrint("P-Time: ");
-    DebugSerialPrintLn(prevLastWheelEventTime);
+    Log.noticeln("Cranks: %u", cumulativeCrankRev);
+    Log.noticeln("P-Cranks: %u", prevCumlativeCranks);
+    Log.noticeln("Time: %u", lastCrankTime);
+    Log.noticeln("P-Time: %u", prevLastWheelEventTime);
 
     int32_t deltaRotations = cumulativeCrankRev - prevCumlativeCranks;
     if (deltaRotations < 0) {
       // Roll over
-      DebugSerialInfo("Rotations rollover");
+      Log.noticeln("Rotations rollover");
       deltaRotations += 0xFFFF;
     }
 
     int32_t timeDelta = lastCrankTime - prevLastWheelEventTime;
     if (timeDelta < 0) {
       // Roll over
-      DebugSerialInfo("Time rollover");
+      Log.noticeln("Time rollover");
       timeDelta += 0xFFFF;
     }
 
@@ -275,6 +262,6 @@ void CadenceSensorApp::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     }
 
   } else {
-    DebugSerialErr("No crank data");
+    Log.errorln("No crank data");
   }
 }

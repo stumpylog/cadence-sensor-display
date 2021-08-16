@@ -7,7 +7,7 @@
 #include <cstring>
 
 // Local
-#include "DebugSerial.h"
+#include "LoggingConfig.h"
 
 DisplayManager::DisplayManager(void) :
   Adafruit_SH1107(64, 128, &Wire),
@@ -20,7 +20,7 @@ void DisplayManager::initialize(void)
 {
   while (false == this->begin(DISPLAY_ADDR, true))
   {
-    DebugSerialErr("starting display.begin");
+    Log.errorln("starting display.begin");
     delay(100);
   }
   this->landscape();

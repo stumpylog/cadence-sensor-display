@@ -7,7 +7,7 @@
 
 // Local
 #include "DisplayManager.h"
-#include "DebugSerial.h"
+#include "LoggingConfig.h"
 #include "CadenceSensorApp.h"
 
 // Declaration
@@ -35,13 +35,15 @@ static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, ui
 }
 
 void setup() {
-  DebugSerialStart(115200);
-  //DebugSerialReady();
-  DebugSerialInfo("Starting cadence-sensor version " VERSION " ...");
+#ifndef DISABLE_LOGGING
+  Serial.begin(115200);
+#endif
+  Log.begin(LOG_LEVEL_INFO, &Serial);
+  Log.noticeln("Starting cadence-sensor version " VERSION " ...");
 
   if (false == app.initialize())
   {
-    DebugSerialErr("App init failed");
+    Log.fatalln("App init failed");
     while (1) {};
   }
 
@@ -49,14 +51,14 @@ void setup() {
   pinMode(BUTTON_C, INPUT_PULLUP);
   esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_A), 0);
 
-  DebugSerialInfo("Setup completed");
+  Log.noticeln("Setup completed");
 }
 
 void loop() {
   app.step();
   if ((LOW == digitalRead(BUTTON_C)) || true == app.sleep)
   {
-    DebugSerialInfo("Starting deep sleep");
+    Log.noticeln("Starting deep sleep");
     esp_deep_sleep_start();
   }
   delay(100);
