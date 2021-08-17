@@ -6,10 +6,7 @@
 #include <BLEUUID.h>
 
 // Local
-#include "DisplayManager.h"
-#include "BluetoothManager.h"
 #include "LoggingConfig.h"
-#include "CadenceSensorApp.h"
 #include "IApplication.h"
 #include "Version.h"
 #include "Tasks.h"

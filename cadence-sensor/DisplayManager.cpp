@@ -11,16 +11,15 @@
 #include "Blackboard.h"
 #include "Version.h"
 
-DisplayManager::DisplayManager(void) :
-  _display(DISPLAY_HEIGHT, DISPLAY_WIDTH, &Wire),
-  _state { AppState_t::DISP_VERSION_STATE },
-  _state_ticks{ 0 } {}
+DisplayManager::DisplayManager(void)
+  : _display(DISPLAY_HEIGHT, DISPLAY_WIDTH, &Wire),
+    _state{ AppState_t::DISP_VERSION_STATE },
+    _state_ticks{ 0 } {}
 
 DisplayManager::~DisplayManager(void) {}
 
-bool DisplayManager::initialize(void)
-{
-  bool passed { true };
+bool DisplayManager::initialize(void) {
+  bool passed{ true };
 
   _state = AppState_t::DISP_VERSION_STATE;
 
@@ -40,7 +39,7 @@ bool DisplayManager::initialize(void)
 }
 
 void DisplayManager::step(void) {
-  AppState_t next_state { _state };
+  AppState_t next_state{ _state };
 
   switch (_state) {
     case AppState_t::DISP_VERSION_STATE:
@@ -60,8 +59,7 @@ void DisplayManager::step(void) {
         _display.print("Battery: ");
         _display.println(blackboard.power.percent);
         _display.display();
-      }
-      else {
+      } else {
         _display.println("No battery info");
         _display.display();
       }
@@ -77,7 +75,7 @@ void DisplayManager::step(void) {
       if (true == blackboard.cadence.valid) {
         _clear();
         _display.setTextSize(CADENCE_FONT_SIZE);
-      } else  {
+      } else {
         next_state = AppState_t::DISP_NO_CADENCE;
       }
       break;
@@ -102,13 +100,12 @@ void DisplayManager::step(void) {
       break;
   }
 
-   _state_ticks++;
+  _state_ticks++;
 
   _state = next_state;
 }
 
-void DisplayManager::_clear(void)
-{
+void DisplayManager::_clear(void) {
   _display.clearDisplay();
   _display.display();
 }

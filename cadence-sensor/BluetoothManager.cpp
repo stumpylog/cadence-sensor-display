@@ -4,8 +4,8 @@
 #include "Tasks.h"
 #include "Blackboard.h"
 
-BluetoothManager::BluetoothManager(BLEScanCompleteCB_t pScanCompleteCallBack, BLENotifyCB_t pNotifyCallBack) :
-    CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816)),
+BluetoothManager::BluetoothManager(BLEScanCompleteCB_t pScanCompleteCallBack, BLENotifyCB_t pNotifyCallBack)
+  : CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816)),
     NotifyCharacteristicUUID(static_cast<uint16_t>(0x2a5b)),
     pBLEScan{ nullptr },
     cadenceSensor{ nullptr },
@@ -17,7 +17,7 @@ BluetoothManager::BluetoothManager(BLEScanCompleteCB_t pScanCompleteCallBack, BL
 BluetoothManager::~BluetoothManager(void) {}
 
 bool BluetoothManager::initialize(void) {
-    // Reset all state and counters
+  // Reset all state and counters
   _state = AppState_t::SCAN_DEVICES;
   scanCount = 0;
 
@@ -41,7 +41,6 @@ bool BluetoothManager::initialize(void) {
   Log.noticeln("init completed");
 
   return true;
-
 }
 
 void BluetoothManager::step(void) {
@@ -49,7 +48,7 @@ void BluetoothManager::step(void) {
   AppState_t nextState{ _state };
   switch (_state) {
     case AppState_t::SCAN_DEVICES:
-      if (scanCount > (MAX_SCANS - 1 )) {
+      if (scanCount > (MAX_SCANS - 1)) {
         nextState = AppState_t::ABORT;
       } else {
         if (true == pBLEScan->start(SCAN_TIME_SECS, pScanCompletedCB, false)) {
@@ -146,12 +145,21 @@ void BluetoothManager::onResult(BLEAdvertisedDevice advertisedDevice) {
 }
 
 void BluetoothManager::setScanComplete(void) {
-  if (_state != AppState_t::CONNECT_TO_SENSOR) {
+
+  Log.verboseln("scan complete callback");
+
+  if ((_state != AppState_t::CONNECT_TO_SENSOR) || (_state != AppState_t::NOTIFY_CADENCE)) {
     _state = AppState_t::SCAN_DEVICES;
+
+    Log.noticeln("retry BLE scan");
+
   }
 }
 
 void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+
+  Log.verboseln("notify callback");
+
   uint8_t const flags = pData[0];
 
   bool const hasWheel = static_cast<bool>(flags & 0x1);
