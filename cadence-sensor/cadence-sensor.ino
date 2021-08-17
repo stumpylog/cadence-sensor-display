@@ -7,36 +7,19 @@
 
 // Local
 #include "DisplayManager.h"
+#include "BluetoothManager.h"
 #include "LoggingConfig.h"
 #include "CadenceSensorApp.h"
 #include "IApplication.h"
 #include "Version.h"
-
-// Declaration
-static void scanCompleteCB(BLEScanResults);
-static void notifyCallback(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
+#include "Tasks.h"
 
 // Constants
 // Display - Buttons
 static constexpr uint8_t BUTTON_A{ GPIO_NUM_15 };
 static constexpr uint8_t BUTTON_B{ GPIO_NUM_32 };
 static constexpr uint8_t BUTTON_C{ GPIO_NUM_14 };
-static constexpr uint8_t TASK_COUNT { 1 };
 
-
-static CadenceSensorApp app(scanCompleteCB, notifyCallback);
-
-static IApplication* tasks[TASK_COUNT] = {
-  new DisplayManager(),
-};
-
-static void scanCompleteCB(BLEScanResults results) {
-  app.setScanComplete();
-}
-
-static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-  app.notify(pBLERemoteCharacteristic, pData, length, isNotify);
-}
 
 void setup() {
 #ifndef DISABLE_LOGGING
@@ -51,6 +34,7 @@ void setup() {
     if (false == tasks[idx]->initialize()) {
 
       Log.fatalln("app %d init failed", idx);
+
       while (1) {
         delay(500);
       }

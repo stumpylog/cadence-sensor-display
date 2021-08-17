@@ -16,10 +16,7 @@ typedef struct {
 
 typedef struct {
   bool valid;
-  uint16_t cadence;
-  // TODO - move internal
-  uint16_t prevCumlativeCranks;
-  uint16_t prevLastWheelEventTime;
+  uint8_t cadence;
 } CadenceCalculatorData;
 
 typedef struct {
