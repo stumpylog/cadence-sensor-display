@@ -75,6 +75,7 @@ void DisplayManager::step(void) {
       if (true == blackboard.cadence.valid) {
         _clear();
         _display.setTextSize(CADENCE_FONT_SIZE);
+        next_state = AppState_t::DISP_CADENCE_STATE;
       } else {
         next_state = AppState_t::DISP_NO_CADENCE;
       }
@@ -89,15 +90,43 @@ void DisplayManager::step(void) {
     case AppState_t::WAIT_CADENCE:
       if (true == blackboard.cadence.valid) {
         next_state = AppState_t::CADENCE_SETUP;
+      } else if (true == blackboard.ble.aborted ) {
+        next_state = AppState_t::DISP_BLE_ABORT;
+      } else if (true == blackboard.power.sleep) {
+        next_state = AppState_t::DISP_SLEEPING;
       }
       break;
     case AppState_t::DISP_CADENCE_STATE:
       if (true == blackboard.cadence.valid) {
-        _clear();
+        _display.clearDisplay();
         _display.setCursor(CADENCE_FONT_CENTER_X, CADENCE_FONT_CENTER_Y);
         _display.print(blackboard.cadence.cadence);
+        _display.display();
+      }
+      if (true == blackboard.power.sleep) {
+        _clear();
+        next_state = AppState_t::DISP_SLEEPING;
       }
       break;
+    case AppState_t::DISP_BLE_ABORT:
+      _display.println("No device found");
+      _display.display();
+      next_state = AppState_t::BLE_ABORT;
+      break;
+    case AppState_t::BLE_ABORT:
+      if (true == blackboard.power.sleep) {
+        next_state = AppState_t::DISP_SLEEPING;
+      }
+      break;
+    case AppState_t::DISP_SLEEPING:
+      _display.println("Entering sleep");
+      Log.noticeln("Entering sleep");
+      _display.display();
+      next_state = AppState_t::SLEEP;
+      break;
+    case AppState_t::SLEEP:
+      break;
+
   }
 
   _state_ticks++;

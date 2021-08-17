@@ -42,6 +42,7 @@ void CadenceCalculator::step(void) {
 void CadenceCalculator::_calculate(void) {
 
   if (true == blackboard.ble.valid) {
+
     if ((millis() - blackboard.ble.lastNotifyTime) <= SENSOR_STALENESS_LIMIT_MS) {
 
       int32_t deltaRotations = blackboard.ble.cumlativeCranks - _prevCumlativeCranks;

@@ -49,12 +49,14 @@ void BluetoothManager::step(void) {
   switch (_state) {
     case AppState_t::SCAN_DEVICES:
       if (scanCount > (MAX_SCANS - 1)) {
+        Log.errorln("Unable to locate BLE device");
+        blackboard.ble.aborted = true;
         nextState = AppState_t::ABORT;
       } else {
         if (true == pBLEScan->start(SCAN_TIME_SECS, pScanCompletedCB, false)) {
           nextState = AppState_t::SCAN_RUNNING;
           scanCount++;
-          Log.noticeln("BLE scan started");
+          Log.noticeln("BLE %d scan started", scanCount);
         } else {
           // TODO Handle error on start of scanning
           Log.errorln("BLE scan start");
@@ -75,7 +77,12 @@ void BluetoothManager::step(void) {
       nextState = AppState_t::SCAN_DEVICES;
       break;
     case AppState_t::SCAN_RUNNING:
+      // The scan will find a device and transition or
+      // will not and retry scanning
+      break;
     case AppState_t::NOTIFY_CADENCE:
+      // Gathering of BLE data is done in the notify callback
+      break;
     case AppState_t::ABORT:
       // Nothing to do
       break;
@@ -162,6 +169,8 @@ void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
 
   uint8_t const flags = pData[0];
 
+  Log.noticeln("Flags %b", pData[0]);
+
   bool const hasWheel = static_cast<bool>(flags & 0x1);
   bool const hasCrank = static_cast<bool>(flags & 0x2);
 
@@ -170,6 +179,7 @@ void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     int crankRevIndex = 1;
     int crankTimeIndex = 3;
     if (true == hasWheel) {
+      Log.noticeln("has wheel");
       crankRevIndex = 7;
       crankTimeIndex = 9;
     }

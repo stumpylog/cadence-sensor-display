@@ -11,12 +11,6 @@
 #include "Version.h"
 #include "Tasks.h"
 
-// Constants
-// Display - Buttons
-static constexpr uint8_t BUTTON_A{ GPIO_NUM_15 };
-static constexpr uint8_t BUTTON_B{ GPIO_NUM_32 };
-static constexpr uint8_t BUTTON_C{ GPIO_NUM_14 };
-
 
 void setup() {
 #ifndef DISABLE_LOGGING

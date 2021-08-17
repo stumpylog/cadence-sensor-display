@@ -8,10 +8,10 @@ typedef struct {
 
 typedef struct {
   bool valid;
+  bool aborted;
   uint32_t lastNotifyTime;
   uint16_t cumlativeCranks;
   uint16_t lastWheelEventTime;
-
 } BluetoothCadenceData;
 
 typedef struct {
@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
   bool valid;
+  bool sleep;
   uint8_t percent;
 } PowerData;
 

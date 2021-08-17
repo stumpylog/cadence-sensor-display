@@ -8,6 +8,7 @@ enum Tasks_t : uint8_t {
   BLE_TASK_IDX = 0,
   CALC_TASK_IDX,
   DISP_TASK_IDX,
+  PWR_TASK_IDX,
   TASK_COUNT
 };
 
