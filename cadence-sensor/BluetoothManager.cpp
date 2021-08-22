@@ -4,13 +4,11 @@
 #include "Tasks.h"
 #include "Blackboard.h"
 
-BluetoothManager::BluetoothManager(BLEScanCompleteCB_t pScanCompleteCallBack, BLENotifyCB_t pNotifyCallBack)
+BluetoothManager::BluetoothManager(void)
   : CycleSpeedAndCadenceServiceUUID(static_cast<uint16_t>(0x1816)),
     NotifyCharacteristicUUID(static_cast<uint16_t>(0x2a5b)),
     pBLEScan{ nullptr },
     cadenceSensor{ nullptr },
-    pScanCompletedCB{ pScanCompleteCallBack },
-    pNotifyCompletedCB{ pNotifyCallBack },
     scanCount{ 0 },
     _state{ AppState_t::SCAN_DEVICES } {}
 
@@ -53,7 +51,7 @@ void BluetoothManager::step(void) {
         blackboard.ble.aborted = true;
         nextState = AppState_t::ABORT;
       } else {
-        if (true == pBLEScan->start(SCAN_TIME_SECS, pScanCompletedCB, false)) {
+        if (true == pBLEScan->start(SCAN_TIME_SECS, scanCompleteCB, false)) {
           nextState = AppState_t::SCAN_RUNNING;
           scanCount++;
           Log.noticeln("BLE %d scan started", scanCount);
@@ -119,7 +117,7 @@ bool BluetoothManager::_connect(void) {
   }
 
   if (true == pRemoteCharacteristic->canNotify()) {
-    pRemoteCharacteristic->registerForNotify(pNotifyCompletedCB);
+    pRemoteCharacteristic->registerForNotify(notifyCallback);
   } else {
     Log.errorln("Unable to subscribe to notify");
     pClient->disconnect();

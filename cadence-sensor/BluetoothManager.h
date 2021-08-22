@@ -7,12 +7,9 @@
 // Local
 #include "IApplication.h"
 
-typedef void (BLEScanCompleteCB_t)(BLEScanResults);
-typedef void (BLENotifyCB_t)(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
-
 class BluetoothManager : public IApplication, public BLEAdvertisedDeviceCallbacks, public BLEClientCallbacks  {
   public:
-    BluetoothManager(BLEScanCompleteCB_t, BLENotifyCB_t);
+    BluetoothManager(void);
     ~BluetoothManager(void);
 
     bool initialize(void);
@@ -46,8 +43,6 @@ class BluetoothManager : public IApplication, public BLEAdvertisedDeviceCallback
 
     BLEScan* pBLEScan;
     BLEAdvertisedDevice* cadenceSensor;
-    BLEScanCompleteCB_t* pScanCompletedCB;
-    BLENotifyCB_t* pNotifyCompletedCB;
 
     // BLE scanning counter
     uint8_t scanCount;

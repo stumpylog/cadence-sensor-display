@@ -43,7 +43,9 @@ void CadenceCalculator::_calculate(void) {
 
   if (true == blackboard.ble.valid) {
 
-    if ((millis() - blackboard.ble.lastNotifyTime) <= SENSOR_STALENESS_LIMIT_MS) {
+    uint32_t const last_update_time = (millis() - blackboard.ble.lastNotifyTime);
+
+    if (last_update_time <= SENSOR_STALENESS_LIMIT_MS) {
 
       int32_t deltaRotations = blackboard.ble.cumlativeCranks - _prevCumlativeCranks;
 
@@ -65,6 +67,7 @@ void CadenceCalculator::_calculate(void) {
         float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_RESOLUTION / SECONDS_PER_MINUTE;
         // Calculate new RPM
         blackboard.cadence.cadence = static_cast<uint16_t>(static_cast<float>(deltaRotations) / timeMins);
+        Log.noticeln("Cadence %d", blackboard.cadence.cadence);
         // Save latest data
         _prevCumlativeCranks = blackboard.ble.cumlativeCranks;
         _prevLastWheelEventTime = blackboard.ble.lastWheelEventTime ;

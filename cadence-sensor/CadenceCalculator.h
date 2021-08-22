@@ -24,7 +24,7 @@ private:
 
   // Constants
   // Sensor - staleness cycles
-  static constexpr uint16_t SENSOR_STALENESS_LIMIT_MS{ 2000 };
+  static constexpr uint16_t SENSOR_STALENESS_LIMIT_MS{ 1000 };
   // Sensor - last event time resolution
   static constexpr float_t SENSOR_TIME_RESOLUTION{ 1024.0f };
   static constexpr float_t SECONDS_PER_MINUTE{ 60.0f };

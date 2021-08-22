@@ -6,7 +6,7 @@
 #include "CadenceCalculator.h"
 #include "PowerManager.h"
 
-static BluetoothManager ble(scanCompleteCB, notifyCallback);
+static BluetoothManager ble;
 static DisplayManager disp;
 static CadenceCalculator calc;
 static PowerManager power;
