@@ -28,6 +28,7 @@ void setup() {
 
       while (1) {
         delay(500);
+        yield();
       }
     }
   }

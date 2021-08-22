@@ -16,7 +16,7 @@ typedef struct {
 
 typedef struct {
   bool valid;
-  uint8_t cadence;
+  uint16_t cadence;
 } CadenceCalculatorData;
 
 typedef struct {

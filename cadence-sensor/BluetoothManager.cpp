@@ -169,7 +169,7 @@ void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
 
   uint8_t const flags = pData[0];
 
-  Log.noticeln("Flags %b", pData[0]);
+  Log.verboseln("Flags %b", pData[0]);
 
   bool const hasWheel = static_cast<bool>(flags & 0x1);
   bool const hasCrank = static_cast<bool>(flags & 0x2);
@@ -178,6 +178,7 @@ void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
 
     int crankRevIndex = 1;
     int crankTimeIndex = 3;
+
     if (true == hasWheel) {
       Log.noticeln("has wheel");
       crankRevIndex = 7;
@@ -190,8 +191,8 @@ void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     memcpy(&cumulativeCrankRev, &pData[crankRevIndex], sizeof(uint16_t));
     memcpy(&lastCrankTime, &pData[crankTimeIndex], sizeof(uint16_t));
 
-    Log.noticeln("Cranks: %u", cumulativeCrankRev);
-    Log.noticeln("Time: %u", lastCrankTime);
+    Log.verboseln("Cranks: %u", cumulativeCrankRev);
+    Log.verboseln("Time: %u", lastCrankTime);
 
     blackboard.ble.valid = true;
     blackboard.ble.cumlativeCranks = cumulativeCrankRev;
@@ -200,6 +201,7 @@ void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
 
   } else {
     Log.errorln("No crank data");
+    blackboard.ble.valid = false;
   }
 }
 

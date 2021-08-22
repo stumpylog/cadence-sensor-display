@@ -64,10 +64,16 @@ void CadenceCalculator::_calculate(void) {
         // Convert event time delta to a time in minutes
         float const timeMins = static_cast<float>(timeDelta) / SENSOR_TIME_RESOLUTION / SECONDS_PER_MINUTE;
         // Calculate new RPM
-        blackboard.cadence.cadence = static_cast<uint8_t>(static_cast<float>(deltaRotations) / timeMins);
+        blackboard.cadence.cadence = static_cast<uint16_t>(static_cast<float>(deltaRotations) / timeMins);
+        // Save latest data
+        _prevCumlativeCranks = blackboard.ble.cumlativeCranks;
+        _prevLastWheelEventTime = blackboard.ble.lastWheelEventTime ;
+      } else {
+        Log.noticeln("Time delta %d", timeDelta);
       }
 
     } else {
+      Log.warningln("Last notify time stale");
       blackboard.cadence.cadence = 0;
     }
 
