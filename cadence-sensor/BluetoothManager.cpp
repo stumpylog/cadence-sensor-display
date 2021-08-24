@@ -189,13 +189,12 @@ void BluetoothManager::notify(BLERemoteCharacteristic* pBLERemoteCharacteristic,
     memcpy(&cumulativeCrankRev, &pData[crankRevIndex], sizeof(uint16_t));
     memcpy(&lastCrankTime, &pData[crankTimeIndex], sizeof(uint16_t));
 
-    Log.verboseln("Cranks: %u", cumulativeCrankRev);
-    Log.verboseln("Time: %u", lastCrankTime);
+    Log.noticeln("Cranks: %u", cumulativeCrankRev);
+    Log.noticeln("Time: %u", lastCrankTime);
 
     blackboard.ble.valid = true;
     blackboard.ble.cumlativeCranks = cumulativeCrankRev;
     blackboard.ble.lastWheelEventTime = lastCrankTime;
-    blackboard.ble.lastNotifyTime = millis();
 
   } else {
     Log.errorln("No crank data");
