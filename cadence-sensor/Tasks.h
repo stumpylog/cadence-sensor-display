@@ -13,3 +13,5 @@ enum Tasks_t : uint8_t {
 };
 
 extern IApplication* tasks[Tasks_t::TASK_COUNT];
+
+static constexpr uint32_t LoopDelayMs { 100 };

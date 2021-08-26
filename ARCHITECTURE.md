@@ -16,6 +16,8 @@
 
 # Architecture
 
+The application is split into several managers, with defined roles.
+
 ## Bluetooth Manager
 
 Handle locating the CSC sensor and getting data from it with callbacks.  If the sensor disconnects, attempts to reconnect
@@ -26,7 +28,7 @@ Uses data from the BLE manger to calculate the cadence
 
 ## Display Manager
 
-Outputs log information during startup, then battery level, otherwise shows calculated cadence.
+Outputs log information during startup, then battery level, otherwise shows calculated cadence, if the BLE has connected and is valid.
 
 ## Power Manager
 
