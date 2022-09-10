@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## vNext (0.0.3)
+## 0.1.0
 
-* Changed to use the [Arduino-Log](https://github.com/thijse/Arduino-Log) library for serial logging
+* Internal component re-organization
 
 ## 0.0.2
 
