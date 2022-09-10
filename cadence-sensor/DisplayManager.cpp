@@ -90,7 +90,7 @@ void DisplayManager::step(void) {
     case AppState_t::WAIT_CADENCE:
       if (true == blackboard.cadence.valid) {
         next_state = AppState_t::CADENCE_SETUP;
-      } else if (true == blackboard.ble.aborted ) {
+      } else if (true == blackboard.ble.aborted) {
         next_state = AppState_t::DISP_BLE_ABORT;
       } else if (true == blackboard.power.sleep) {
         next_state = AppState_t::DISP_SLEEPING;
@@ -98,9 +98,24 @@ void DisplayManager::step(void) {
       break;
     case AppState_t::DISP_CADENCE_STATE:
       if (true == blackboard.cadence.valid) {
+        // Clear old data
         _display.clearDisplay();
+
+        // Print cadence
+        _display.setTextSize(4);
         _display.setCursor(CADENCE_FONT_CENTER_X, CADENCE_FONT_CENTER_Y);
         _display.print(blackboard.cadence.cadence);
+
+        // Print line seps
+        _display.writeFastVLine(73, 0, 64, 1);
+        _display.writeFastVLine(74, 0, 64, 1);
+
+        // Print distance in miles
+        _display.setCursor(80, 28);
+        _display.setTextSize(2);
+        _display.print(blackboard.cadence.distance, 2);
+
+        // Actually show it all
         _display.display();
       }
       if (true == blackboard.power.sleep) {
@@ -126,7 +141,6 @@ void DisplayManager::step(void) {
       break;
     case AppState_t::SLEEP:
       break;
-
   }
 
   _state_ticks++;

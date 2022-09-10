@@ -28,6 +28,8 @@ private:
   // Sensor - last event time resolution
   static constexpr float_t SENSOR_TIME_RESOLUTION{ 1024.0f };
   static constexpr float_t SECONDS_PER_MINUTE{ 60.0f };
+  static constexpr float_t WHEEL_CIRCUMFERENCE_INCHES{ 51.836f };
+  static constexpr float_t INCHES_TO_MILES{ 0.000015782828283f };
 
   // Methods
   bool connect(void);
@@ -41,6 +43,7 @@ private:
   uint16_t _prevLastWheelEventTime;
 
   uint32_t _lastCalculateTime;
+  uint64_t _sessionCranks;
 
   void _calculate(void);
 };

@@ -49,9 +49,14 @@ private:
   // Display - maximum characters at font size 1
   static constexpr uint8_t DISPLAY_MAX_CHARS_PER_LINE{ 20 };
   // Display - cadence font size
-  static constexpr uint8_t CADENCE_FONT_SIZE{ 7 };
-  static constexpr uint8_t CADENCE_FONT_CENTER_X{ 2 };
-  static constexpr uint8_t CADENCE_FONT_CENTER_Y{ 5 };
+  static constexpr uint8_t CADENCE_FONT_SIZE{ 4 };
+  static constexpr uint8_t CADENCE_FONT_CENTER_X{ 0 };
+  static constexpr uint8_t CADENCE_FONT_CENTER_Y{ 20 };
+  // Display - distance font and location
+  static constexpr uint8_t DISTANCE_FONT_SIZE{ 2 };
+  static constexpr uint8_t DISTANCE_FONT_CENTER_X{ 80 };
+  static constexpr uint8_t DISTANCE_FONT_CENTER_Y{ 28 };
+
   static constexpr uint8_t VERSION_DISPLAY_TICKS{ 20 };
   static constexpr uint8_t POWER_DISPLAY_TICKS{ 50 };
 

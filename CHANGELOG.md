@@ -1,8 +1,13 @@
 # CHANGELOG
 
+## vNext (0.2.0)
+
+* Includes display of distance in miles
+
 ## 0.1.0
 
 * Internal component re-organization
+* Included library updates
 
 ## 0.0.2
 

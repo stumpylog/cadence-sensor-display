@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cmath>
 
 #pragma once
 
@@ -16,6 +17,7 @@ typedef struct {
 typedef struct {
   bool valid;
   uint16_t cadence;
+  float_t distance;
 } CadenceCalculatorData;
 
 typedef struct {
