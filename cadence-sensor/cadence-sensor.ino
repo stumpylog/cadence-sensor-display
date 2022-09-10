@@ -6,33 +6,11 @@
 #include <BLEUUID.h>
 
 // Local
-#include "DisplayManager.h"
 #include "LoggingConfig.h"
-#include "CadenceSensorApp.h"
+#include "IApplication.h"
+#include "Version.h"
+#include "Tasks.h"
 
-// Declaration
-static void scanCompleteCB(BLEScanResults);
-static void notifyCallback(BLERemoteCharacteristic*, uint8_t*, size_t, bool);
-
-// Constants
-// Display - Buttons
-static constexpr uint8_t BUTTON_A{ GPIO_NUM_15 };
-static constexpr uint8_t BUTTON_B{ GPIO_NUM_32 };
-static constexpr uint8_t BUTTON_C{ GPIO_NUM_14 };
-
-// Program version
-#define VERSION "0.0.2"
-static CadenceSensorApp app(scanCompleteCB, notifyCallback);
-
-DisplayManager display;
-
-static void scanCompleteCB(BLEScanResults results) {
-  app.setScanComplete();
-}
-
-static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-  app.notify(pBLERemoteCharacteristic, pData, length, isNotify);
-}
 
 void setup() {
 #ifndef DISABLE_LOGGING
@@ -41,26 +19,29 @@ void setup() {
   Log.begin(LOG_LEVEL_INFO, &Serial);
   Log.noticeln("Starting cadence-sensor version " VERSION " ...");
 
-  if (false == app.initialize())
-  {
-    Log.fatalln("App init failed");
-    while (1) {};
-  }
+  for (int8_t idx = 0; idx < TASK_COUNT; idx++) {
+    Log.noticeln("Initializing app %d", idx);
 
-  pinMode(BUTTON_A, INPUT_PULLUP);
-  pinMode(BUTTON_C, INPUT_PULLUP);
-  esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_A), 0);
+    if (false == tasks[idx]->initialize()) {
+
+      Log.fatalln("app %d init failed", idx);
+
+      while (1) {
+        delay(500);
+        yield();
+      }
+    }
+  }
 
   Log.noticeln("Setup completed");
 }
 
 void loop() {
-  app.step();
-  if ((LOW == digitalRead(BUTTON_C)) || true == app.sleep)
-  {
-    Log.noticeln("Starting deep sleep");
-    esp_deep_sleep_start();
+
+  for (int8_t idx = 0; idx < TASK_COUNT; idx++) {
+    tasks[idx]->step();
   }
-  delay(100);
+
+  delay(LoopDelayMs);
   yield();
 }
