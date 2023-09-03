@@ -12,7 +12,7 @@
 #include "Version.h"
 
 DisplayManager::DisplayManager(void)
-  : _display(DISPLAY_HEIGHT, DISPLAY_WIDTH, &Wire),
+  : _display(128, 128, &Wire, -1),
     _state{ AppState_t::DISP_VERSION_STATE },
     _state_ticks{ 0 } {}
 
@@ -23,13 +23,16 @@ bool DisplayManager::initialize(void) {
 
   _state = AppState_t::DISP_VERSION_STATE;
 
+  pinMode(NEOPIXEL_I2C_POWER, OUTPUT);
+  digitalWrite(NEOPIXEL_I2C_POWER, HIGH);
+
   if (false == _display.begin(DISPLAY_ADDR, true)) {
     Log.errorln("display.begin");
     passed = false;
   } else {
     _display.setRotation(1);
     _display.setTextSize(1);
-    _display.setTextColor(SH110X_WHITE);
+    _display.setTextColor(SSD1327_WHITE);
     _display.setCursor(0, 0);
     _state_ticks = 0;
     _clear();
@@ -50,23 +53,6 @@ void DisplayManager::step(void) {
       break;
     case AppState_t::VERSION_TRANSITION:
       if (_state_ticks > VERSION_DISPLAY_TICKS) {
-        next_state = AppState_t::DISP_VOLTAGE_STATE;
-        _state_ticks = 0;
-      }
-      break;
-    case AppState_t::DISP_VOLTAGE_STATE:
-      if (true == blackboard.power.valid) {
-        _display.print("Battery: ");
-        _display.println(blackboard.power.percent);
-        _display.display();
-      } else {
-        _display.println("No battery info");
-        _display.display();
-      }
-      next_state = AppState_t::VOLTAGE_TRANSITION;
-      break;
-    case AppState_t::VOLTAGE_TRANSITION:
-      if (_state_ticks > POWER_DISPLAY_TICKS) {
         next_state = AppState_t::CADENCE_SETUP;
         _state_ticks = 0;
       }
@@ -92,8 +78,6 @@ void DisplayManager::step(void) {
         next_state = AppState_t::CADENCE_SETUP;
       } else if (true == blackboard.ble.aborted) {
         next_state = AppState_t::DISP_BLE_ABORT;
-      } else if (true == blackboard.power.sleep) {
-        next_state = AppState_t::DISP_SLEEPING;
       }
       break;
     case AppState_t::DISP_CADENCE_STATE:
@@ -102,44 +86,30 @@ void DisplayManager::step(void) {
         _display.clearDisplay();
 
         // Print cadence
-        _display.setTextSize(4);
-        _display.setCursor(CADENCE_FONT_CENTER_X, CADENCE_FONT_CENTER_Y);
+        _display.setCursor(2, 2);
+        _display.setTextSize(7);
         _display.print(blackboard.cadence.cadence);
 
         // Print line seps
-        _display.writeFastVLine(73, 0, 64, 1);
-        _display.writeFastVLine(74, 0, 64, 1);
+        _display.drawFastHLine(0, 64, 128, SSD1327_WHITE);
+        _display.drawFastHLine(0, 65, 128, SSD1327_WHITE);
 
         // Print distance in miles
-        _display.setCursor(80, 28);
-        _display.setTextSize(2);
+        _display.setCursor(2, 80);
+        _display.setTextSize(5);
         _display.print(blackboard.cadence.distance, 2);
 
         // Actually show it all
         _display.display();
       }
-      if (true == blackboard.power.sleep) {
-        _clear();
-        next_state = AppState_t::DISP_SLEEPING;
-      }
       break;
     case AppState_t::DISP_BLE_ABORT:
+      _clear();
       _display.println("No device found");
       _display.display();
       next_state = AppState_t::BLE_ABORT;
       break;
     case AppState_t::BLE_ABORT:
-      if (true == blackboard.power.sleep) {
-        next_state = AppState_t::DISP_SLEEPING;
-      }
-      break;
-    case AppState_t::DISP_SLEEPING:
-      _display.println("Entering sleep");
-      Log.noticeln("Entering sleep");
-      _display.display();
-      next_state = AppState_t::SLEEP;
-      break;
-    case AppState_t::SLEEP:
       break;
   }
 

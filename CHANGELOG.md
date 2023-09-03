@@ -1,6 +1,14 @@
 # CHANGELOG
 
-## vNext (0.2.0)
+## vNext (0.3.0)
+
+- Removed power control application
+- Updated Adafruit BusIO to 1.14.3
+- Updated Adafruit GFX to 1.11.7
+- Updated Adafruit SH110X to 2.1.8
+- Updated arduino-esp32 to 2.0.5
+
+## 0.2.0
 
 * Includes display of distance in miles
 

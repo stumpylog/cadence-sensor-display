@@ -34,10 +34,6 @@ bool BluetoothManager::initialize(void) {
   pBLEScan->setActiveScan(true);
   Log.noticeln("BLE init complete");
 
-  Log.noticeln("display init complete");
-
-  Log.noticeln("init completed");
-
   return true;
 }
 

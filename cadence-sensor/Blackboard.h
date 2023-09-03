@@ -22,12 +22,6 @@ typedef struct {
 
 typedef struct {
   bool valid;
-  bool sleep;
-  uint8_t percent;
-} PowerData;
-
-typedef struct {
-  bool valid;
   uint16_t lastDisplayedCadence;
 } DisplayData;
 
@@ -35,7 +29,6 @@ typedef struct {
   SystemData system;
   BluetoothCadenceData ble;
   CadenceCalculatorData cadence;
-  PowerData power;
   DisplayData display;
 } Blackboard;
 

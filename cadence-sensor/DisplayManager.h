@@ -4,7 +4,7 @@
 #include <cstdint>
 
 // Display Libraries
-#include <Adafruit_SH110X.h>
+#include <Adafruit_SSD1327.h>
 
 // Local
 #include "IApplication.h"
@@ -25,25 +25,21 @@ private:
   enum class AppState_t : uint8_t {
     DISP_VERSION_STATE = 0,
     VERSION_TRANSITION,
-    DISP_VOLTAGE_STATE,
-    VOLTAGE_TRANSITION,
     DISP_NO_CADENCE,
     WAIT_CADENCE,
     DISP_BLE_ABORT,
     BLE_ABORT,
     CADENCE_SETUP,
     DISP_CADENCE_STATE,
-    DISP_SLEEPING,
-    SLEEP
   };
 
   // Constants
   // Display - I2C address
-  static constexpr uint8_t DISPLAY_ADDR{ 0x3C };
+  static constexpr uint8_t DISPLAY_ADDR{ SSD1327_I2C_ADDRESS };
   // Display - width
   static constexpr uint8_t DISPLAY_WIDTH{ 128 };
   // Display - height
-  static constexpr uint8_t DISPLAY_HEIGHT{ 64 };
+  static constexpr uint8_t DISPLAY_HEIGHT{ 128 };
   // Display - maximum lines at font size 1
   static constexpr uint8_t DISPLAY_MAX_LINES{ 8 };
   // Display - maximum characters at font size 1
@@ -61,7 +57,7 @@ private:
   static constexpr uint8_t POWER_DISPLAY_TICKS{ 50 };
 
   // Vars
-  Adafruit_SH1107 _display;
+  Adafruit_SSD1327 _display;
   AppState_t _state;
   uint8_t _state_ticks;
 };
